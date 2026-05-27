@@ -24,6 +24,8 @@ Do not run `Fzdn1_TG_Tool_v4.1.real.exe` directly. It is the internal applicatio
 - This public package does not include `license.dat`.
 - This public package does not include the internal API pool.
 - Each employee should activate on their own machine and import their own accounts.
+- Account list refresh now automatically removes duplicate imported accounts when the same Telegram user is detected.
+- The group verification page treats "already in group" as a non-failure state in the visible log/statistics.
 
 ## Repository Layout
 
@@ -32,6 +34,7 @@ docs/                 User instructions and recovery notes
 installer/            Inno Setup build script
 release/              Git LFS tracked installer binary
 source/ui/            Modified UI files
+source/tools/         Session conversion, clean import, duplicate cleanup, and group join helper scripts
 source/launcher/      Single-instance launcher source
 source/config/        Public sanitized config templates
 resource/             API pool resources for employees

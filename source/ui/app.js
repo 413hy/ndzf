@@ -360,6 +360,7 @@ function switchDmMode(mode, btn) {
 /* ── 账号管理 ── */
 let _selectedAccounts = new Set();
 let _accountsCache = {};  // session -> {status, username, device} 用于 diff
+let _autoDedupeAccountsRunning = false;
 const ACCOUNT_STATUS_CACHE_KEY = 'fzdn_account_status_cache_v1';
 
 function _loadAccountStatusCache() {
@@ -407,9 +408,81 @@ function _mergeSavedAccountStatus(accounts) {
   });
 }
 
+function _normalizeAccountPhone(phone) {
+  return String(phone || '').replace(/\D/g, '');
+}
+
+function _accountDedupeKey(a) {
+  if (a.user_id) return 'uid:' + String(a.user_id);
+  const session = String(a.session || '');
+  const tgMatch = session.match(/^tg_(\d+)$/);
+  if (tgMatch) return 'uid:' + tgMatch[1];
+  const phone = _normalizeAccountPhone(a.phone);
+  if (phone) return 'phone:' + phone;
+  return '';
+}
+
+function _accountKeepScore(a) {
+  let score = 0;
+  const session = String(a.session || '');
+  if (/^tg_\d+$/.test(session)) score += 100;
+  if (a.user_id) score += 40;
+  if (a.username) score += 20;
+  if (a.phone) score += 10;
+  if (a.status && !_isPlaceholderStatus(a.status)) score += 5;
+  return score;
+}
+
+async function _autoRemoveDuplicateAccounts(accounts) {
+  if (_autoDedupeAccountsRunning) return false;
+  const groups = {};
+  accounts.forEach(a => {
+    const key = _accountDedupeKey(a);
+    if (!key) return;
+    if (!groups[key]) groups[key] = [];
+    groups[key].push(a);
+  });
+
+  const remove = [];
+  Object.values(groups).forEach(items => {
+    if (items.length <= 1) return;
+    const sorted = [...items].sort((a, b) => _accountKeepScore(b) - _accountKeepScore(a));
+    sorted.slice(1).forEach(a => {
+      if (a.session) remove.push(a.session);
+    });
+  });
+
+  if (!remove.length) return false;
+
+  _autoDedupeAccountsRunning = true;
+  try {
+    const uniqueRemove = [...new Set(remove)];
+    await pyCall('delete_accounts', JSON.stringify(uniqueRemove));
+    uniqueRemove.forEach(s => {
+      _selectedAccounts.delete(s);
+      delete _accountsCache[s];
+    });
+    const saved = _loadAccountStatusCache();
+    uniqueRemove.forEach(s => delete saved[s]);
+    _saveAccountStatusCache(saved);
+    showToast('success', `已自动去重 ${uniqueRemove.length} 个重复账号`);
+    return true;
+  } catch (e) {
+    showToast('error', '自动去重失败: ' + (e && e.message ? e.message : e));
+    return false;
+  } finally {
+    _autoDedupeAccountsRunning = false;
+  }
+}
+
 async function refreshAccounts() {
   const raw = await pyCall('get_accounts_json');
   const accounts = _mergeSavedAccountStatus(JSON.parse(raw));
+  if (await _autoRemoveDuplicateAccounts(accounts)) {
+    const raw2 = await pyCall('get_accounts_json');
+    renderAccounts(_mergeSavedAccountStatus(JSON.parse(raw2)));
+    return;
+  }
   renderAccounts(accounts);
 }
 
@@ -1334,7 +1407,7 @@ function registerCallbacks() {
     document.getElementById('sc-new-num').textContent = s.new || 0;
     document.getElementById('sc-round-num').textContent = s.round || 0;
   };
-  window._onVerifierLog = (msg) => appendLog('verifier-log', msg);
+  window._onVerifierLog = (msg) => appendLog('verifier-log', _normalizeVerifierLog(msg));
   window._onVerifierDone = () => {
     setVerifierRunning(false);
     // 恢复打包按钮
@@ -1343,9 +1416,9 @@ function registerCallbacks() {
   };
   window._onVerifierStats = (json) => {
     const s = JSON.parse(json);
-    document.getElementById('vf-joined-num').textContent = s.joined || 0;
+    document.getElementById('vf-joined-num').textContent = (s.joined || 0) + _vfAlreadyInGroupCount;
     document.getElementById('vf-success-num').textContent = s.success || 0;
-    document.getElementById('vf-failed-num').textContent = s.failed || 0;
+    document.getElementById('vf-failed-num').textContent = Math.max(0, (s.failed || 0) - _vfAlreadyInGroupCount);
   };
   window._onCheckerLog = (msg) => appendLog('checker-log', msg);
   window._onCheckerDone = () => setCheckerRunning(false);
@@ -1681,6 +1754,17 @@ function _getSelectedSessions(target) {
 }
 
 /* ── 过验证 ── */
+let _vfAlreadyInGroupCount = 0;
+
+function _normalizeVerifierLog(msg) {
+  const text = String(msg || '');
+  if (text.includes('加入失败-(1)')) {
+    _vfAlreadyInGroupCount += 1;
+    return text.replace('加入失败-(1)', '已在群内/无需重复加入');
+  }
+  return msg;
+}
+
 async function startVerifier() {
   const groups = document.getElementById('vf-groups-input').value.trim()
     .split('\n').map(s => s.trim()).filter(Boolean);
@@ -1726,6 +1810,7 @@ async function startVerifier() {
   ));
   if (res.ok) {
     setVerifierRunning(true);
+    _vfAlreadyInGroupCount = 0;
     document.getElementById('vf-joined-num').textContent = '0';
     document.getElementById('vf-success-num').textContent = '0';
     document.getElementById('vf-failed-num').textContent = '0';
