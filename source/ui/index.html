@@ -1,0 +1,2070 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fzdn1 TG Tool V4.1</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- ── 侧边栏 ── -->
+<aside class="sidebar" id="sidebar">
+  <div class="sidebar-logo">
+    <span class="logo-icon">TG</span>
+    <div>
+      <div class="logo-text">Fzdn1 V4.1</div>
+      <div id="license-expire" style="font-size:11px;color:var(--text-muted);margin-top:2px;font-weight:400"></div>
+    </div>
+  </div>
+
+  <nav class="sidebar-nav">
+    <a class="nav-item active" data-page="accounts" onclick="switchPage('accounts')">
+      <span class="nav-icon">◎</span><span class="nav-label">账号管理</span>
+    </a>
+    <a class="nav-item" data-page="broadcast" onclick="switchPage('broadcast')">
+      <span class="nav-icon">▷</span><span class="nav-label">群发</span>
+    </a>
+    <a class="nav-item" data-page="dm" onclick="switchPage('dm')">
+      <span class="nav-icon">◈</span><span class="nav-label">批量私信</span>
+    </a>
+    <a class="nav-item" data-page="verifier" onclick="switchPage('verifier')">
+      <span class="nav-icon">✦</span><span class="nav-label">批量进群验证</span>
+    </a>
+    <a class="nav-item" data-page="monitor" onclick="switchPage('monitor')">
+      <span class="nav-icon">◎</span><span class="nav-label">监听私信</span>
+    </a>
+    <a class="nav-item" data-page="clone" onclick="switchPage('clone')">
+      <span class="nav-icon">◌</span><span class="nav-label">群组克隆</span>
+    </a>
+    <a class="nav-item" data-page="inviter" onclick="switchPage('inviter')">
+      <span class="nav-icon">⊹</span><span class="nav-label">强拉<span class="nav-beta">Beta</span></span>
+    </a>
+    <a class="nav-item" data-page="member-scraper" onclick="switchPage('member-scraper')">
+      <span class="nav-icon">◑</span><span class="nav-label">群成员采集</span>
+    </a>
+    <a class="nav-item" data-page="scraper" onclick="switchPage('scraper')">
+      <span class="nav-icon">⊙</span><span class="nav-label">采集群组</span>
+    </a>
+    <a class="nav-item" data-page="checker" onclick="switchPage('checker')">
+      <span class="nav-icon">◉</span><span class="nav-label">活跃度检测</span>
+    </a>
+    <a class="nav-item" data-page="tools" onclick="switchPage('tools')">
+      <span class="nav-icon">◈</span><span class="nav-label">综合工具</span>
+    </a>
+    <a class="nav-item" data-page="config" onclick="switchPage('config')">
+      <span class="nav-icon">◧</span><span class="nav-label">配置管理</span>
+    </a>
+  </nav>
+
+  <div class="sidebar-bottom">
+    <button class="theme-toggle" onclick="toggleTheme()" title="切换主题" id="theme-btn">
+      <svg id="theme-icon-moon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+      <svg id="theme-icon-sun" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:none"><circle cx="12" cy="12" r="5"/><line x1="12" y1="1" x2="12" y2="3"/><line x1="12" y1="21" x2="12" y2="23"/><line x1="4.22" y1="4.22" x2="5.64" y2="5.64"/><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"/><line x1="1" y1="12" x2="3" y2="12"/><line x1="21" y1="12" x2="23" y2="12"/><line x1="4.22" y1="19.78" x2="5.64" y2="18.36"/><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"/></svg>
+      <span style="font-size:13px;color:var(--text-sidebar)" id="theme-label">深色</span>
+    </button>
+  </div>
+</aside>
+
+<!-- ── 主内容区 ── -->
+<main class="main-content">
+
+  <!-- Toast 通知 -->
+  <div id="toast-container"></div>
+
+  <!-- ══ 账号管理页 ══ -->
+  <div class="page active" id="page-accounts">
+    <div class="page-header">
+      <h1 class="page-title">账号管理</h1>
+      <div class="header-actions acct-actions">
+        <button class="btn btn-ghost" onclick="refreshAccounts()">刷新</button>
+        <button class="btn btn-ghost" onclick="detectAccounts()">检测状态</button>
+        <button class="btn btn-ghost btn-danger" onclick="cleanAbnormal()">清理异常</button>
+        <button class="btn btn-ghost btn-warning" onclick="moveSpamAccounts()">移出双向</button>
+        <button class="btn btn-ghost btn-danger" onclick="deleteSelected()">删除选中</button>
+        <button class="btn btn-ghost" onclick="kickOtherDevices()">踢出其他设备</button>
+        <button class="btn btn-ghost" onclick="importSessions()">导入 Session</button>
+        <button class="btn btn-ghost" onclick="importTdata()">导入直登包</button>
+        <button class="btn btn-primary" onclick="showLoginModal()">+ 登录账号</button>
+      </div>
+    </div>
+
+    <!-- 全选栏 -->
+    <div class="select-bar card" style="margin-bottom:10px">
+      <label class="checkbox-label">
+        <input type="checkbox" id="select-all" onchange="toggleSelectAll(this)">
+        <span>全选</span>
+      </label>
+      <span class="select-count" id="select-count">已选 0 个</span>
+      <button class="btn btn-sm btn-ghost" onclick="showEditProfileModal()">批量修改资料</button>
+      <button class="btn btn-sm btn-ghost" onclick="showFetchCodeModal()">接收验证码</button>
+    </div>
+
+    <!-- 账号列表（固定高度滚动容器） -->
+    <div class="account-list-wrap">
+      <table class="account-table">
+        <colgroup>
+          <col class="col-check">
+          <col class="col-name">
+          <col class="col-id">
+          <col class="col-phone">
+          <col class="col-status">
+          <col class="col-premium">
+          <col class="col-spam">
+        </colgroup>
+        <thead>
+          <tr>
+            <th></th>
+            <th>账号</th>
+            <th>ID</th>
+            <th>手机号</th>
+            <th class="th-center">状态</th>
+            <th class="th-center">会员</th>
+            <th class="th-center" style="padding-left:0">双向限制</th>
+          </tr>
+        </thead>
+        <tbody id="account-list">
+          <tr><td colspan="7" class="empty-state">暂无账号，请导入 Session 文件或登录新账号</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- ══ 群发页 ══ -->
+  <div class="page" id="page-broadcast">
+    <div class="page-header">
+      <h1 class="page-title">群发</h1>
+      <div class="header-actions">
+        <span class="status-badge" id="broadcast-status-badge">空闲</span>
+        <button class="btn btn-ghost" onclick="showSelectAccountModal('broadcast')">选择账号 <span class="count-badge" id="bc-account-count">全部</span></button>
+        <button class="btn btn-primary" id="broadcast-start-btn" onclick="startBroadcast()">▷ 开始群发</button>
+        <button class="btn btn-danger" id="broadcast-stop-btn" onclick="stopBroadcast()" disabled>◼ 停止</button>
+      </div>
+    </div>
+
+    <!-- 顶部设置卡片 -->
+    <div class="card bc-top-card">
+      <!-- 第一行：间隔设置 -->
+      <div class="bc-row1">
+        <span class="bc-label">群组间隔</span>
+        <input type="number" id="bc-interval-min" class="input bc-num" value="30" min="1">
+        <span class="bc-tilde">~</span>
+        <input type="number" id="bc-interval-max" class="input bc-num" value="60" min="1">
+        <span class="bc-unit">秒</span>
+        <span class="bc-row-sep"></span>
+        <span class="bc-label">轮次间隔</span>
+        <input type="number" id="bc-complete-min" class="input bc-num" value="60" min="1">
+        <span class="bc-tilde">~</span>
+        <input type="number" id="bc-complete-max" class="input bc-num" value="120" min="1">
+        <span class="bc-unit">秒</span>
+        <span class="bc-row-sep"></span>
+        <label class="toggle-label bc-sm-label">
+          <input type="checkbox" id="bc-schedule-enable"><span>定时</span>
+        </label>
+        <input type="datetime-local" id="bc-schedule-time" class="input bc-datetime">
+        <span class="bc-row-sep"></span>
+        <label class="toggle-label bc-sm-label" title="触发双向限制时自动给 SpamBot 发 /start 尝试解除">
+          <input type="checkbox" id="bc-auto-unspam"><span>双向自动解除</span>
+        </label>
+        <span class="bc-row-sep"></span>
+        <label class="toggle-label bc-sm-label" title="群发前检测无发言权限的群组并自动退出">
+          <input type="checkbox" id="cfg-auto-leave"><span>退出禁言群</span>
+        </label>
+      </div>
+
+      <!-- 第二行：发送模式 tab + 参数 -->
+      <div class="bc-row2">
+        <div class="bc-mode-tabs">
+          <button class="bc-mode-pill active" data-mode="引用转发" onclick="switchBcMode('引用转发', this)">引用转发</button>
+          <button class="bc-mode-pill" data-mode="直发" onclick="switchBcMode('直发', this)">直发</button>
+          <button class="bc-mode-pill" data-mode="转发" onclick="switchBcMode('转发', this)">转发</button>
+          <button class="bc-mode-pill" data-mode="Post" onclick="switchBcMode('Post', this)">Post</button>
+          <button class="bc-mode-pill" data-mode="贴纸" onclick="switchBcMode('贴纸', this)">贴纸</button>
+          <button class="bc-mode-pill" data-mode="名片" onclick="switchBcMode('名片', this)">名片</button>
+        </div>
+        <span class="bc-row-sep"></span>
+        <div class="bc-param-wrap">
+          <div class="bc-param-panel active" id="bc-param-引用转发">
+            <span class="bc-label">消息链接</span><span class="count-badge" id="bc-link-count">0</span>
+            <button class="btn btn-sm btn-ghost" onclick="showListModal('message_links','消息链接','https://t.me/...')">管理</button>
+            <span class="bc-vsep"></span>
+            <span class="bc-label">回复文本</span><span class="count-badge" id="bc-text-count">0</span>
+            <button class="btn btn-sm btn-ghost" onclick="showListModal('reply_texts','回复文本','文本内容')">管理</button>
+            <span class="bc-vsep"></span>
+            <label class="toggle-label bc-sm-label"><input type="checkbox" id="bc-random-send"><span>随机发送</span></label>
+            <label class="toggle-label bc-sm-label"><input type="checkbox" id="bc-use-quote"><span>显示原文引用</span></label>
+          </div>
+          <div class="bc-param-panel" id="bc-param-直发">
+            <span class="bc-label">发送文案</span><span class="count-badge" id="bc-direct-count">0</span>
+            <button class="btn btn-sm btn-ghost" onclick="showDirectMediaModal('bc')">管理</button>
+            <span class="bc-vsep"></span>
+            <label class="toggle-label bc-sm-label"><input type="checkbox" id="bc-direct-random"><span>随机发送</span></label>
+            <label class="toggle-label bc-sm-label"><input type="checkbox" id="bc-direct-random-suffix"><span>随机后缀</span></label>
+          </div>
+          <div class="bc-param-panel" id="bc-param-转发">
+            <span class="bc-label">消息链接</span><span class="count-badge" id="bc-fwd-count">0</span>
+            <button class="btn btn-sm btn-ghost" onclick="showListModal('forward_links','转发链接','https://t.me/...')">管理</button>
+            <span class="bc-vsep"></span>
+            <label class="toggle-label bc-sm-label"><input type="checkbox" id="bc-fwd-hide"><span>隐藏来源</span></label>
+            <label class="toggle-label bc-sm-label"><input type="checkbox" id="bc-fwd-random"><span>随机发送</span></label>
+          </div>
+          <div class="bc-param-panel" id="bc-param-Post">
+            <span class="bc-label">分享码</span><span class="count-badge" id="bc-post-count">0</span>
+            <button class="btn btn-sm btn-ghost" onclick="showListModal('post_codes','Post分享码','分享码')">管理</button>
+            <span class="bc-vsep"></span>
+            <label class="toggle-label bc-sm-label"><input type="checkbox" id="bc-post-random"><span>随机发送</span></label>
+          </div>
+          <div class="bc-param-panel" id="bc-param-贴纸">
+            <span class="bc-label">贴纸包</span><span class="count-badge" id="bc-sticker-count">0</span>
+            <button class="btn btn-sm btn-ghost" onclick="showListModal('sticker_packs','贴纸包链接','https://t.me/addstickers/PackName')">管理</button>
+            <span class="bc-vsep"></span>
+            <span style="font-size:11px;color:var(--text-muted)">从所有贴纸包中随机发一张</span>
+          </div>
+          <div class="bc-param-panel" id="bc-param-名片">
+            <span class="bc-label">名片列表</span><span class="count-badge" id="bc-contact-count">0</span>
+            <button class="btn btn-sm btn-ghost" onclick="showContactModal('bc')">管理</button>
+            <span class="bc-vsep"></span>
+            <label class="toggle-label bc-sm-label"><input type="checkbox" id="bc-contact-random" checked><span>随机发送</span></label>
+            <span style="font-size:11px;color:var(--text-muted)">格式: 手机号|显示名字</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 中间：账号统计（固定高度可滚动） -->
+    <div class="card bc-stats-card">
+      <div class="stats-table-wrap">
+        <table class="stats-table">
+          <thead>
+            <tr>
+              <th>账号</th>
+              <th>手机号</th>
+              <th>成功</th>
+              <th>失败</th>
+              <th>群组</th>
+              <th>轮次</th>
+              <th>状态</th>
+              <th style="text-align:right"><button class="btn btn-sm btn-ghost" onclick="refreshStats()" style="padding:2px 8px;font-size:11px">刷新</button></th>
+            </tr>
+          </thead>
+          <tbody id="stats-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- 底部：运行日志（撑满剩余空间） -->
+    <div class="card bc-log-card">
+      <div class="card-title">运行日志 <button class="btn btn-sm btn-ghost" onclick="clearLog('broadcast-log')" style="float:right">清空</button></div>
+      <div class="log-box" id="broadcast-log"></div>
+    </div>
+  </div>
+
+  <!-- ══ 批量私信页 ══ -->
+  <div class="page" id="page-dm">
+    <div class="page-header">
+      <h1 class="page-title">批量私信</h1>
+      <div class="header-actions">
+        <span class="status-badge" id="dm-status-badge">就绪</span>
+        <button class="btn btn-ghost" onclick="showSelectAccountModal('dm')">选择账号 <span class="count-badge" id="dm-account-count">全部</span></button>
+        <button class="btn btn-primary" id="dm-start-btn" onclick="startDm()">▷ 开始私信</button>
+        <button class="btn btn-danger" id="dm-stop-btn" onclick="stopDm()" disabled>◼ 停止</button>
+      </div>
+    </div>
+
+    <!-- 顶部设置卡片 -->
+    <div class="card bc-top-card">
+      <!-- 第一行：发送设置 -->
+      <div class="bc-row1">
+        <span class="bc-label">用户间隔</span>
+        <input type="number" id="dm-interval-min" class="input bc-num" value="30" min="1">
+        <span class="bc-tilde">~</span>
+        <input type="number" id="dm-interval-max" class="input bc-num" value="60" min="1">
+        <span class="bc-unit">秒</span>
+        <span class="bc-row-sep"></span>
+        <span class="bc-label">单账号上限</span>
+        <input type="number" id="dm-max-per-account" class="input bc-num" value="0" min="0" style="width:60px !important">
+        <span style="font-size:11px;color:var(--text-muted)">0=不限</span>
+        <span class="bc-row-sep"></span>
+        <label class="toggle-label bc-sm-label">
+          <input type="checkbox" id="dm-stop-on-flood"><span>双向立即停止</span>
+        </label>
+        <span class="bc-row-sep"></span>
+        <label class="toggle-label bc-sm-label">
+          <input type="checkbox" id="dm-schedule-enable"><span>定时</span>
+        </label>
+        <input type="datetime-local" id="dm-schedule-time" class="input bc-datetime">
+      </div>
+
+      <!-- 第二行：发送模式 tab + 参数 -->
+      <div class="bc-row2">
+        <div class="bc-mode-tabs">
+          <button class="bc-mode-pill active" data-mode="直发" onclick="switchDmMode('直发', this)">直发</button>
+          <button class="bc-mode-pill" data-mode="引用转发" onclick="switchDmMode('引用转发', this)">引用转发</button>
+          <button class="bc-mode-pill" data-mode="转发" onclick="switchDmMode('转发', this)">转发</button>
+          <button class="bc-mode-pill" data-mode="Post" onclick="switchDmMode('Post', this)">Post</button>
+          <button class="bc-mode-pill" data-mode="贴纸" onclick="switchDmMode('贴纸', this)">贴纸</button>
+          <button class="bc-mode-pill" data-mode="名片" onclick="switchDmMode('名片', this)">名片</button>
+        </div>
+        <span class="bc-row-sep"></span>
+        <div class="bc-param-wrap">
+          <div class="bc-param-panel active" id="dm-param-直发">
+            <span class="bc-label">发送文案</span><span class="count-badge" id="dm-direct-count">0</span>
+            <button class="btn btn-sm btn-ghost" onclick="showDirectMediaModal('dm')">管理</button>
+            <span class="bc-vsep"></span>
+            <label class="toggle-label bc-sm-label"><input type="checkbox" id="dm-direct-random"><span>随机发送</span></label>
+          </div>
+          <div class="bc-param-panel" id="dm-param-引用转发">
+            <span class="bc-label">消息链接</span><span class="count-badge" id="dm-link-count">0</span>
+            <button class="btn btn-sm btn-ghost" onclick="showListModal('dm_links','私信链接','https://t.me/...')">管理</button>
+            <span class="bc-vsep"></span>
+            <span class="bc-label">回复文本</span><span class="count-badge" id="dm-text-count">0</span>
+            <button class="btn btn-sm btn-ghost" onclick="showListModal('dm_reply_texts','私信回复文本','文本内容')">管理</button>
+            <span class="bc-vsep"></span>
+            <label class="toggle-label bc-sm-label"><input type="checkbox" id="dm-random-send"><span>随机发送</span></label>
+          </div>
+          <div class="bc-param-panel" id="dm-param-转发">
+            <span class="bc-label">消息链接</span><span class="count-badge" id="dm-fwd-count">0</span>
+            <button class="btn btn-sm btn-ghost" onclick="showListModal('dm_forward_links','私信转发链接','https://t.me/...')">管理</button>
+            <span class="bc-vsep"></span>
+            <label class="toggle-label bc-sm-label"><input type="checkbox" id="dm-fwd-hide"><span>隐藏来源</span></label>
+            <label class="toggle-label bc-sm-label"><input type="checkbox" id="dm-fwd-random"><span>随机发送</span></label>
+          </div>
+          <div class="bc-param-panel" id="dm-param-Post">
+            <span class="bc-label">分享码</span><span class="count-badge" id="dm-post-count">0</span>
+            <button class="btn btn-sm btn-ghost" onclick="showListModal('dm_post_codes','私信分享码','分享码')">管理</button>
+            <span class="bc-vsep"></span>
+            <label class="toggle-label bc-sm-label"><input type="checkbox" id="dm-post-random"><span>随机发送</span></label>
+          </div>
+          <div class="bc-param-panel" id="dm-param-贴纸">
+            <span class="bc-label">贴纸包</span><span class="count-badge" id="dm-sticker-count">0</span>
+            <button class="btn btn-sm btn-ghost" onclick="showListModal('dm_sticker_packs','私信贴纸包链接','https://t.me/addstickers/PackName')">管理</button>
+            <span class="bc-vsep"></span>
+            <span style="font-size:11px;color:var(--text-muted)">从所有贴纸包中随机发一张</span>
+          </div>
+          <div class="bc-param-panel" id="dm-param-名片">
+            <span class="bc-label">名片列表</span><span class="count-badge" id="dm-contact-count">0</span>
+            <button class="btn btn-sm btn-ghost" onclick="showContactModal('dm')">管理</button>
+            <span class="bc-vsep"></span>
+            <label class="toggle-label bc-sm-label"><input type="checkbox" id="dm-contact-random" checked><span>随机发送</span></label>
+            <span style="font-size:11px;color:var(--text-muted)">格式: 手机号|显示名字</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 中间：目标用户 + 实时统计（左右分栏） -->
+    <div class="dm-mid-row">
+      <div class="card dm-users-card">
+        <div class="card-title">
+          目标用户 <small style="color:var(--text-muted);text-transform:none;letter-spacing:0">一行一个，支持 @用户名、链接或手机号</small>
+          <button onclick="copyAllDmUsers()" style="margin-left:8px;padding:2px 10px;font-size:11px;cursor:pointer;border:none;border-radius:4px;background:var(--accent);color:#fff;font-weight:600">复制全部</button>
+        </div>
+        <textarea id="dm-users-input" class="textarea" placeholder="@username&#10;https://t.me/username&#10;+8613800138000&#10;8613800138000&#10;..." style="flex:1;resize:none;height:100%;min-height:0"></textarea>
+      </div>
+      <div class="card dm-stat-card">
+        <div class="card-title">实时统计</div>
+        <div class="dm-stats">
+          <div class="dm-stat-item">
+            <div class="dm-stat-num success" id="dm-success-num">0</div>
+            <div class="dm-stat-label">成功</div>
+          </div>
+          <div class="dm-stat-item">
+            <div class="dm-stat-num danger" id="dm-failed-num">0</div>
+            <div class="dm-stat-label">失败</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 底部：私信日志 -->
+    <div class="card bc-log-card">
+      <div class="card-title">私信日志 <button class="btn btn-sm btn-ghost" onclick="clearLog('dm-log')" style="float:right">清空</button></div>
+      <div class="log-box" id="dm-log"></div>
+    </div>
+  </div>
+
+  <!-- ══ 配置管理页 ══ -->
+  <div class="page" id="page-config">
+    <div class="page-header">
+      <h1 class="page-title">配置管理</h1>
+      <div class="header-actions">
+        <button class="btn btn-primary" onclick="saveConfig()">保存配置</button>
+      </div>
+    </div>
+
+    <div class="config-grid">
+      <!-- API 配置 -->
+      <div class="card">
+        <div class="card-title">API 配置</div>
+        <div class="form-group">
+          <label>API ID</label>
+          <input type="text" id="cfg-api-id" class="input" placeholder="19507614">
+        </div>
+        <div class="form-group">
+          <label>API Hash</label>
+          <input type="text" id="cfg-api-hash" class="input" placeholder="6ed7516ea066d98be8fe9f4d560f5950">
+        </div>
+        <div class="form-group">
+          <label style="color:var(--text-muted);font-size:12px">获取地址: https://my.telegram.org/apps</label>
+        </div>
+        <button class="btn btn-ghost" onclick="showApiPoolModal()">管理 API 池</button>
+      </div>
+
+      <!-- 行为配置 -->
+      <div class="card">
+        <div class="card-title">行为配置</div>
+        <label class="toggle-label">
+          <input type="checkbox" id="cfg-keep-online">
+          <span>保持账号在线</span>
+        </label>
+        <label class="toggle-label">
+          <input type="checkbox" id="cfg-device-sim">
+          <span>设备信息模拟</span>
+        </label>
+      </div>
+
+      <!-- 代理配置 -->
+      <div class="card config-full" style="display:flex;flex-direction:column">
+        <div class="card-title">代理配置 <small style="color:var(--text-muted)">每行一个，格式: [user:pass@]host:port，留空则不使用</small></div>
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:8px">
+          <span style="font-size:12px;color:var(--text-muted);white-space:nowrap">代理类型</span>
+          <select id="cfg-proxy-type" class="input" style="width:110px;padding:5px 8px;font-size:13px">
+            <option value="socks5">SOCKS5</option>
+            <option value="socks4">SOCKS4</option>
+            <option value="http">HTTP</option>
+          </select>
+        </div>
+        <textarea id="cfg-proxies" class="textarea" rows="5" placeholder="user:pass@1.2.3.4:1080&#10;1.2.3.4:1080" style="flex:1;resize:none"></textarea>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ 采集器页 ══ -->
+  <div class="page" id="page-scraper">
+    <div class="page-header">
+      <h1 class="page-title">采集器</h1>
+      <div class="header-actions">
+        <span class="status-badge" id="scraper-status-badge">空闲</span>
+        <button class="btn btn-ghost" onclick="showScAccountModal()">选择采集账号 <span class="count-badge" id="sc-account-count">全部</span></button>
+        <button class="btn btn-primary" id="scraper-start-btn" onclick="startScraper()">▷ 开始采集</button>
+        <button class="btn btn-danger" id="scraper-stop-btn" onclick="stopScraper()" disabled>◼ 停止</button>
+      </div>
+    </div>
+
+    <!-- 顶部：采集设置 -->
+    <div class="bc-top-row">
+      <div class="card bc-mode-card" style="flex:1">
+        <div class="card-title">采集设置 <small style="color:var(--text-muted);text-transform:none;letter-spacing:0;font-weight:400">API 和账号复用配置管理页的设置</small></div>
+        <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:center">
+          <div class="form-group" style="flex:0 0 auto;margin-bottom:0">
+            <label>jisou 翻页上限</label>
+            <input type="number" id="sc-max-jisou" class="input" value="100" min="1" style="width:70px">
+          </div>
+          <div class="form-group" style="flex:0 0 auto;margin-bottom:0">
+            <label>jiso/soso 翻页上限</label>
+            <input type="number" id="sc-max-base" class="input" value="600" min="1" style="width:70px">
+          </div>
+          <div class="form-group" style="flex:0 0 auto;margin-bottom:0">
+            <label>验证码重试次数</label>
+            <input type="number" id="sc-captcha-retry" class="input" value="3" min="1" style="width:60px">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 账号选择弹窗触发按钮已移至 header -->
+
+    <!-- 中间：关键词 + 统计 -->
+    <div class="dm-mid-row">
+      <!-- 关键词管理 -->
+      <div class="card dm-users-card">
+        <div class="card-title" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+          <span>关键词 <span class="count-badge" id="sc-kw-count">0</span></span>
+          <button class="btn btn-sm btn-ghost" onclick="showScKeywordsModal()">管理</button>
+        </div>
+        <div class="scraper-kw-list" id="sc-kw-list"></div>
+      </div>
+
+      <!-- 采集统计 -->
+      <div class="card sc-stat-card">
+        <div class="card-title">采集统计</div>
+        <div style="display:flex;flex-direction:column;gap:8px;padding:2px 0">
+          <div class="dm-stat-item">
+            <div class="dm-stat-num success" id="sc-total-num" style="font-size:22px">0</div>
+            <div class="dm-stat-label">链接总数</div>
+          </div>
+          <div class="dm-stat-item">
+            <div class="dm-stat-num" style="color:var(--accent);font-size:22px" id="sc-new-num">0</div>
+            <div class="dm-stat-label">本次新增</div>
+          </div>
+          <div class="dm-stat-item">
+            <div class="dm-stat-num" style="color:var(--text-muted);font-size:22px" id="sc-round-num">0</div>
+            <div class="dm-stat-label">当前轮次</div>
+          </div>
+        </div>
+        <div style="margin-top:12px;display:flex;flex-direction:column;gap:6px">
+          <button class="btn btn-sm btn-ghost" onclick="viewScraperResults()">查看结果</button>
+          <button class="btn btn-sm btn-ghost" onclick="openScraperResultFile()">打开文件位置</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- 底部：采集日志 -->
+    <div class="card bc-log-card">
+      <div class="card-title">采集日志 <button class="btn btn-sm btn-ghost" onclick="clearLog('scraper-log')" style="float:right">清空</button></div>
+      <div class="log-box" id="scraper-log"></div>
+    </div>
+  </div>
+
+  <!-- ══ 过验证页 ══ -->
+  <div class="page" id="page-verifier">
+    <div class="page-header">
+      <h1 class="page-title">批量进群验证</h1>
+      <div class="header-actions">
+        <span class="status-badge" id="verifier-status-badge">空闲</span>
+        <button class="btn btn-sm btn-ghost" onclick="showSelectAccountModal('verifier')">选择账号 <span class="count-badge" id="vf-account-count">全部</span></button>
+        <button class="btn btn-sm btn-primary" id="verifier-start-btn" onclick="startVerifier()">▷ 开始</button>
+        <button class="btn btn-sm btn-danger" id="verifier-stop-btn" onclick="stopVerifier()" disabled>◼ 停止</button>
+        <button class="btn btn-sm btn-ghost btn-danger" onclick="leaveAllGroups()">退出所有群组</button>
+        <label class="toggle-label" style="font-size:12px">
+          <input type="checkbox" id="vf-leave-channels">
+          <span>同时退出频道</span>
+        </label>
+        <button class="btn btn-sm btn-ghost" id="packer-start-btn" onclick="startGroupPacker()">📦 打包群组</button>
+        <button class="btn btn-sm btn-ghost" onclick="exportGroupLinks()">📋 导出链接</button>
+      </div>
+    </div>
+
+    <!-- 顶部：群组输入 + 间隔设置 + 统计 -->
+    <div class="bc-top-row">
+      <div class="card bc-mode-card vf-groups-card" style="flex:2">
+        <div class="card-title">群组链接 <small style="color:var(--text-muted);text-transform:none;letter-spacing:0;font-weight:400">一行一个，支持 @用户名、t.me/ 链接或 t.me/addlist/ 文件夹链接</small></div>
+        <textarea id="vf-groups-input" class="textarea" placeholder="@groupname&#10;https://t.me/groupname&#10;https://t.me/addlist/xxxxx&#10;..." style="resize:none;min-height:100px;flex:1"></textarea>
+      </div>
+      <div class="card bc-interval-card">
+        <div class="card-title">间隔设置</div>
+        <div class="form-group" style="margin-bottom:0">
+          <label>群组间隔（秒）</label>
+          <div class="range-input">
+            <input type="number" id="vf-interval-min" class="input" value="160" min="1">
+            <span>~</span>
+            <input type="number" id="vf-interval-max" class="input" value="220" min="1">
+          </div>
+        </div>
+        <div style="margin-top:8px">
+          <div class="vf-inline-row">
+            <label class="toggle-label" style="font-size:12px">
+              <input type="checkbox" id="vf-test-speak">
+              <span>加入后发言测试（单群组模式）</span>
+            </label>
+            <button class="btn btn-sm btn-ghost" onclick="showListModal('vf_greeting_texts','发言测试文案','大家好')">管理 <span class="count-badge" id="vf-greeting-count">0</span></button>
+          </div>
+          <label class="toggle-label" style="font-size:12px;margin-top:4px">
+            <input type="checkbox" id="vf-all-join">
+            <span>所有账号加入全部群组（不均分）</span>
+          </label>
+          <label class="toggle-label" style="font-size:12px;margin-top:4px">
+            <input type="checkbox" id="vf-auto-start-broadcast">
+            <span>完成后自动开始群发</span>
+          </label>
+          <label class="toggle-label" style="font-size:12px;margin-top:8px">
+            <input type="checkbox" id="vf-ai-enable">
+            <span>启用 Gemini AI 处理高难验证题</span>
+          </label>
+          <div style="margin-top:8px;display:flex;flex-direction:column;gap:6px">
+            <input type="password" id="vf-ai-api-key" class="input" placeholder="Gemini / 渠道 API Key（客户只需填写一个 Key）">
+            <input type="text" id="vf-ai-base-url" class="input" placeholder="AI 接口地址，默认 https://right.codes/gemini">
+            <div style="display:flex;align-items:center;gap:6px">
+              <select id="vf-ai-proxy-scheme" class="input" style="width:92px;padding:5px 8px;font-size:12px">
+                <option value="auto">自动</option>
+                <option value="http">HTTP</option>
+                <option value="https">HTTPS</option>
+                <option value="socks5">SOCKS5</option>
+                <option value="socks4">SOCKS4</option>
+              </select>
+              <input type="text" id="vf-ai-proxy-url" class="input" style="flex:1" placeholder="AI 专用代理（可选，只影响 AI；如 127.0.0.1:7890 或 user:pass@host:port）">
+            </div>
+            <div style="display:flex;align-items:center;gap:8px">
+              <label for="vf-ai-timeout" style="font-size:12px;color:var(--text-muted);white-space:nowrap">AI 超时（秒）</label>
+              <input type="number" id="vf-ai-timeout" class="input" value="3" min="1" max="10" step="0.5" style="width:90px">
+              <span style="font-size:11px;color:var(--text-muted)">仅用于图片题、语义按钮题、非数学投票题</span>
+            </div>
+          </div>
+          <label class="toggle-label" style="font-size:12px;margin-top:4px;display:none">
+            <input type="checkbox" id="vf-debug-capture">
+            <span>调试抓取（记录完整验证流程到 group_verifications.json）</span>
+          </label>
+        </div>
+      </div>
+      <div class="card dm-stat-card">
+        <div class="card-title">实时统计</div>
+        <div class="dm-stats">
+          <div class="dm-stat-item">
+            <div class="dm-stat-num" style="color:var(--accent)" id="vf-joined-num">0</div>
+            <div class="dm-stat-label">已加群组</div>
+          </div>
+          <div class="dm-stat-item">
+            <div class="dm-stat-num success" id="vf-success-num">0</div>
+            <div class="dm-stat-label">验证成功</div>
+          </div>
+          <div class="dm-stat-item">
+            <div class="dm-stat-num danger" id="vf-failed-num">0</div>
+            <div class="dm-stat-label">验证失败</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 底部：运行日志（撑满剩余空间） -->
+    <div class="card bc-log-card">
+      <div class="card-title">运行日志 <button class="btn btn-sm btn-ghost" onclick="clearLog('verifier-log')" style="float:right">清空</button></div>
+      <div class="log-box" id="verifier-log"></div>
+    </div>
+  </div>
+
+  <!-- ══ 监听私信页 ══ -->
+  <div class="page" id="page-monitor">
+    <div class="page-header">
+      <h1 class="page-title">监听私信</h1>
+      <div class="header-actions">
+        <span class="status-badge" id="monitor-status-badge">空闲</span>
+        <button class="btn btn-sm btn-primary" id="monitor-start-btn" onclick="startMonitor()">▷ 开始监听</button>
+        <button class="btn btn-sm btn-danger" id="monitor-stop-btn" onclick="stopMonitor()" disabled>◼ 停止</button>
+      </div>
+    </div>
+
+    <div class="two-col" style="flex:1;min-height:0">
+      <!-- 左侧：配置区 -->
+      <div class="col-left" style="flex:0 0 320px;overflow-y:auto">
+
+        <!-- 账号选择 -->
+        <div class="card" style="padding:12px 14px;margin-bottom:10px">
+          <div class="card-title">账号配置</div>
+          <div style="display:flex;flex-direction:column;gap:6px">
+            <button class="btn btn-ghost btn-sm" onclick="showSelectAccountModal('monitor')">
+              监听账号 <span class="count-badge" id="monitor-account-count">全部</span>
+            </button>
+            <button class="btn btn-ghost btn-sm" id="monitor-dm-account-btn" onclick="showMonitorDmAccountModal()">
+              私信账号 <span class="count-badge" id="monitor-dm-account-count">0</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- 关键词 -->
+        <div class="card" style="padding:12px 14px;margin-bottom:10px">
+          <div class="card-title" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+            <span>关键词</span>
+            <button class="btn btn-sm btn-ghost" onclick="saveMonitorConfig()">保存</button>
+          </div>
+          <textarea id="monitor-keywords" class="textarea" placeholder="一行一个，支持正则&#10;留空则监听全部消息" style="resize:none;height:80px"></textarea>
+          <div style="margin-top:8px">
+            <label style="font-size:11px;color:var(--text-muted);font-weight:600;display:block;margin-bottom:4px">黑名单关键词（命中则忽略）</label>
+            <textarea id="monitor-blacklist" class="textarea" placeholder="一行一个" style="resize:none;height:60px"></textarea>
+          </div>
+        </div>
+
+        <!-- 消息过滤器 -->
+        <div class="card" style="padding:12px 14px;margin-bottom:10px">
+          <div class="card-title" style="margin-bottom:8px">消息过滤器 <small style="color:var(--text-muted);font-weight:400;text-transform:none;letter-spacing:0">勾选则过滤掉该类消息</small></div>
+          <div style="display:flex;flex-direction:column;gap:5px">
+            <label class="toggle-label" style="font-size:12px"><input type="checkbox" id="filter-non-premium"><span>过滤未开会员用户</span></label>
+            <label class="toggle-label" style="font-size:12px"><input type="checkbox" id="filter-forward"><span>转发消息</span></label>
+            <label class="toggle-label" style="font-size:12px"><input type="checkbox" id="filter-link"><span>包含链接的消息</span></label>
+            <label class="toggle-label" style="font-size:12px"><input type="checkbox" id="filter-mention"><span>包含用户名（@）的消息</span></label>
+            <label class="toggle-label" style="font-size:12px"><input type="checkbox" id="filter-reply"><span>跨聊天引用消息</span></label>
+            <label class="toggle-label" style="font-size:12px">
+              <input type="checkbox" id="filter-long">
+              <span>超长文消息（超过</span>
+              <input type="number" id="filter-long-len" class="input" value="500" min="1" style="width:60px;height:24px;padding:2px 6px;margin:0 4px">
+              <span>字）</span>
+            </label>
+          </div>
+        </div>
+
+        <!-- 私信设置 -->
+        <div class="card" style="padding:12px 14px;margin-bottom:10px">
+          <div class="card-title" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0">
+            <span>私信设置</span>
+            <button class="btn btn-sm btn-ghost" onclick="openModal('modal-monitor-dm-cfg')">管理</button>
+          </div>
+          <div style="margin-top:8px;font-size:12px;color:var(--text-muted)" id="monitor-dm-status-text">未开启</div>
+        </div>
+
+        <!-- 收到私信自动回复设置 -->
+        <div class="card" style="padding:12px 14px;margin-bottom:10px">
+          <div class="card-title" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0">
+            <span>收到私信自动回复</span>
+            <button class="btn btn-sm btn-ghost" onclick="openModal('modal-monitor-private-reply-cfg')">管理</button>
+          </div>
+          <div style="margin-top:8px;font-size:12px;color:var(--text-muted)" id="monitor-private-reply-status-text">未开启</div>
+        </div>
+
+        <!-- 群内回复设置 -->
+        <div class="card" style="padding:12px 14px;margin-bottom:10px">
+          <div class="card-title" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0">
+            <span>群内回复设置</span>
+            <button class="btn btn-sm btn-ghost" onclick="openModal('modal-monitor-reply-cfg')">管理</button>
+          </div>
+          <div style="margin-top:8px;font-size:12px;color:var(--text-muted)" id="monitor-reply-status-text">未开启</div>
+        </div>
+
+        <!-- 表情反应设置 -->
+        <div class="card" style="padding:12px 14px;margin-bottom:10px">
+          <div class="card-title" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0">
+            <span>表情反应设置</span>
+            <button class="btn btn-sm btn-ghost" onclick="openModal('modal-monitor-react-cfg')">管理</button>
+          </div>
+          <div style="margin-top:8px;font-size:12px;color:var(--text-muted)" id="monitor-react-status-text">未开启</div>
+        </div>
+
+        <!-- Bot 推送 -->
+        <div class="card" style="padding:12px 14px;margin-bottom:0">
+          <div class="card-title" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:0">
+            <span>Bot 推送</span>
+            <button class="btn btn-sm btn-ghost" onclick="openModal('modal-monitor-bot-cfg')">管理</button>
+          </div>
+          <div style="margin-top:8px;font-size:12px;color:var(--text-muted)" id="monitor-bot-status-text">未开启</div>
+        </div>
+
+      </div>
+
+      <!-- 右侧：统计 + 日志 -->
+      <div class="col-right">
+        <!-- 统计 -->
+        <div class="card" style="padding:10px 16px;margin-bottom:10px;flex-shrink:0">
+          <div style="display:flex;gap:24px;align-items:center;flex-wrap:wrap">
+            <div class="dm-stat-item">
+              <div class="dm-stat-num" style="color:var(--accent);font-size:24px" id="monitor-matched-num">0</div>
+              <div class="dm-stat-label">命中次数</div>
+            </div>
+            <div class="dm-stat-item">
+              <div class="dm-stat-num success" style="font-size:24px" id="monitor-dm-num">0</div>
+              <div class="dm-stat-label">私信发送</div>
+            </div>
+            <div class="dm-stat-item">
+              <div class="dm-stat-num" style="color:var(--warning);font-size:24px" id="monitor-bot-num">0</div>
+              <div class="dm-stat-label">Bot 推送</div>
+            </div>
+            <div class="dm-stat-item">
+              <div class="dm-stat-num" style="color:#a78bfa;font-size:24px" id="monitor-reply-num">0</div>
+              <div class="dm-stat-label">群内回复</div>
+            </div>
+            <div class="dm-stat-item">
+              <div class="dm-stat-num" style="color:#f472b6;font-size:24px" id="monitor-react-num">0</div>
+              <div class="dm-stat-label">表情反应</div>
+            </div>
+            <div class="dm-stat-item">
+              <div class="dm-stat-num" style="color:#14b8a6;font-size:24px" id="monitor-private-reply-num">0</div>
+              <div class="dm-stat-label">私聊回复</div>
+            </div>
+          </div>
+        </div>
+        <!-- 日志 -->
+        <div class="card bc-log-card">
+          <div class="card-title">运行日志
+            <button class="btn btn-sm btn-ghost" onclick="clearLog('monitor-log')" style="float:right">清空</button>
+          </div>
+          <div class="log-box" id="monitor-log"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ 强拉页 ══ -->
+  <div class="page" id="page-clone">
+    <div class="page-header">
+      <h1 class="page-title">群组克隆</h1>
+      <div class="header-actions">
+        <span class="status-badge" id="clone-status-badge">空闲</span>
+        <button class="btn btn-sm btn-ghost" onclick="createCloneTask()">新建任务</button>
+        <button class="btn btn-sm btn-ghost" onclick="duplicateCloneTask()">复制任务</button>
+        <button class="btn btn-sm btn-ghost btn-danger" onclick="deleteCloneTask()">删除任务</button>
+        <button class="btn btn-sm btn-ghost" onclick="saveCloneTask()">保存任务</button>
+        <button class="btn btn-sm btn-primary" id="clone-start-btn" onclick="startCloneTask()">▷ 启动任务</button>
+        <button class="btn btn-sm btn-danger" id="clone-stop-btn" onclick="stopCloneTask()" disabled>◼ 停止任务</button>
+      </div>
+    </div>
+
+    <div class="two-col" style="flex:1;min-height:0">
+      <div class="col-left" style="flex:0 0 280px;max-width:280px;overflow-y:auto">
+        <div class="card" style="padding:12px 14px;margin-bottom:10px">
+          <div class="card-title" style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+            <span>任务列表</span>
+            <button class="btn btn-sm btn-ghost" onclick="loadCloneTasks()">刷新</button>
+          </div>
+          <div id="clone-task-list" class="clone-task-list"></div>
+        </div>
+
+        <div class="card" style="padding:12px 14px;margin-bottom:10px">
+          <div class="card-title" style="margin-bottom:8px">账号分配</div>
+          <div style="display:flex;flex-direction:column;gap:8px">
+            <button class="btn btn-ghost btn-sm" onclick="showCloneSessionModal('reader')">
+              采集账号 <span class="count-badge" id="clone-reader-count">0</span>
+            </button>
+            <button class="btn btn-ghost btn-sm" onclick="showCloneSessionModal('sender')">
+              发送账号 <span class="count-badge" id="clone-sender-count">0</span>
+            </button>
+            <button class="btn btn-ghost btn-sm" onclick="showCloneSessionModal('standby')">
+              备用账号 <span class="count-badge" id="clone-standby-count">0</span>
+            </button>
+          </div>
+          <div style="font-size:12px;color:var(--text-muted);margin-top:8px;line-height:1.6">
+            同一目标群默认串行发送，避免顺序错乱。账号角色不允许重叠。
+          </div>
+        </div>
+
+        <div class="card" style="padding:12px 14px">
+          <div class="card-title" style="margin-bottom:8px">任务摘要</div>
+          <div id="clone-task-summary" style="font-size:12px;color:var(--text-muted);line-height:1.7">
+            暂未选择任务
+          </div>
+        </div>
+      </div>
+
+      <div class="col-right">
+        <div class="card" style="padding:12px 16px;margin-bottom:10px;flex-shrink:0">
+          <div class="card-title" style="margin-bottom:10px">基础配置</div>
+          <div class="form-grid" style="display:grid;grid-template-columns:1fr 180px 180px;gap:10px">
+            <div class="form-group" style="margin-bottom:0">
+              <label>任务名称</label>
+              <input type="text" id="clone-task-name" class="input" placeholder="例如：A群迁移到B群">
+            </div>
+            <div class="form-group" style="margin-bottom:0">
+              <label>任务模式</label>
+              <select id="clone-task-mode" class="input">
+                <option value="history_realtime">历史 + 实时</option>
+                <option value="history">仅历史</option>
+                <option value="realtime">仅实时</option>
+              </select>
+            </div>
+            <div class="form-group" style="margin-bottom:0">
+              <label>启用</label>
+              <label class="toggle-label" style="height:36px">
+                <input type="checkbox" id="clone-task-enabled" checked><span>任务启用</span>
+              </label>
+            </div>
+          </div>
+
+          <div class="form-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px">
+            <div class="form-group" style="margin-bottom:0">
+              <label>源群列表</label>
+              <textarea id="clone-source-chats" class="textarea" placeholder="@source_group&#10;https://t.me/source2" style="height:120px;resize:none"></textarea>
+            </div>
+            <div class="form-group" style="margin-bottom:0">
+              <label>目标群列表</label>
+              <textarea id="clone-target-chats" class="textarea" placeholder="@target_group&#10;https://t.me/target2" style="height:120px;resize:none"></textarea>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" style="padding:12px 16px;margin-bottom:10px;flex-shrink:0">
+          <div class="card-title" style="margin-bottom:10px">工作流与过滤</div>
+          <div class="form-grid" style="display:grid;grid-template-columns:repeat(3, 1fr);gap:10px">
+            <div class="form-group" style="margin-bottom:0">
+              <label>历史条数上限</label>
+              <input type="number" id="clone-history-limit" class="input" value="300" min="1">
+            </div>
+            <div class="form-group" style="margin-bottom:0">
+              <label>历史时间范围（小时）</label>
+              <input type="number" id="clone-history-hours" class="input" value="24" min="1">
+            </div>
+            <div class="form-group" style="margin-bottom:0">
+              <label>回放节奏</label>
+              <select id="clone-playback-mode" class="input">
+                <option value="compressed">压缩回放</option>
+                <option value="original">原速回放</option>
+                <option value="fixed">固定间隔</option>
+              </select>
+            </div>
+          </div>
+
+          <div style="display:grid;grid-template-columns:repeat(3, 1fr);gap:10px;margin-top:10px">
+            <label class="toggle-label"><input type="checkbox" id="clone-filter-bots" checked><span>过滤 Bot 消息</span></label>
+            <label class="toggle-label"><input type="checkbox" id="clone-filter-channels" checked><span>过滤频道身份消息</span></label>
+            <label class="toggle-label"><input type="checkbox" id="clone-filter-service" checked><span>过滤群组服务消息</span></label>
+            <label class="toggle-label"><input type="checkbox" id="clone-filter-forwards" checked><span>过滤转发消息</span></label>
+            <label class="toggle-label"><input type="checkbox" id="clone-filter-links"><span>过滤链接消息</span></label>
+            <label class="toggle-label"><input type="checkbox" id="clone-filter-media"><span>过滤媒体消息</span></label>
+          </div>
+        </div>
+
+        <div class="card" style="padding:10px 16px;margin-bottom:10px;flex-shrink:0">
+          <div style="display:flex;gap:24px;align-items:center;flex-wrap:wrap">
+            <div class="dm-stat-item">
+              <div class="dm-stat-num" style="color:var(--accent);font-size:24px" id="clone-task-total">0</div>
+              <div class="dm-stat-label">任务总数</div>
+            </div>
+            <div class="dm-stat-item">
+              <div class="dm-stat-num success" style="font-size:24px" id="clone-task-running">0</div>
+              <div class="dm-stat-label">运行中</div>
+            </div>
+            <div class="dm-stat-item">
+              <div class="dm-stat-num" style="color:var(--warning);font-size:24px" id="clone-task-errors">0</div>
+              <div class="dm-stat-label">异常任务</div>
+            </div>
+            <div style="margin-left:auto;display:flex;gap:8px">
+              <button class="btn btn-sm btn-ghost" onclick="saveCloneTask()">保存当前任务</button>
+              <button class="btn btn-sm btn-ghost" onclick="openCloneTaskLogModal()">查看完整日志</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="card bc-log-card">
+          <div class="card-title">运行日志
+            <button class="btn btn-sm btn-ghost" onclick="clearLog('clone-log')" style="float:right">清空</button>
+          </div>
+          <div class="log-box" id="clone-log"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="page" id="page-inviter">
+    <div class="page-header">
+      <h1 class="page-title">强拉 <span class="nav-beta">Beta</span></h1>
+      <div class="header-actions">
+        <span class="status-badge" id="inviter-status-badge">空闲</span>
+        <button class="btn btn-ghost" onclick="showSelectAccountModal('inviter')">选择账号 <span class="count-badge" id="inviter-account-count">全部</span></button>
+        <button class="btn btn-primary" id="inviter-start-btn" onclick="startInviter()">▷ 开始强拉</button>
+        <button class="btn btn-danger" id="inviter-stop-btn" onclick="stopInviter()" disabled>◼ 停止</button>
+      </div>
+    </div>
+
+    <!-- 顶部：设置行 -->
+    <div class="bc-top-row">
+      <!-- 目标群组（多群） -->
+      <div class="card bc-interval-card" style="flex:2">
+        <div class="card-title">目标群组 <small style="color:var(--text-muted);text-transform:none;letter-spacing:0;font-weight:400">一行一个，支持多群同时拉</small></div>
+        <textarea id="inviter-target" class="textarea" placeholder="@group1&#10;@group2&#10;https://t.me/group3" style="height:80px;resize:none"></textarea>
+      </div>
+      <!-- 间隔 & 上限设置 -->
+      <div class="card bc-interval-card">
+        <div class="card-title">间隔设置</div>
+        <div class="form-group" style="margin-bottom:8px">
+          <label>每人间隔（秒）</label>
+          <div class="range-input">
+            <input type="number" id="inviter-interval-min" class="input" value="30" min="5">
+            <span>~</span>
+            <input type="number" id="inviter-interval-max" class="input" value="60" min="5">
+          </div>
+        </div>
+        <div class="form-group" style="margin-bottom:0">
+          <label>单账号上限 <small style="color:var(--text-muted)">（0=不限）</small></label>
+          <input type="number" id="inviter-max-per" class="input" value="3" min="0" style="width:80px">
+        </div>
+      </div>
+      <!-- 并发 & 每日上限 -->
+      <div class="card bc-interval-card">
+        <div class="card-title">并发控制</div>
+        <div class="form-group" style="margin-bottom:8px">
+          <label>单群同时账号数 <small style="color:var(--text-muted)">（建议 1~2）</small></label>
+          <input type="number" id="inviter-concurrent" class="input" value="1" min="1" max="2" style="width:80px">
+        </div>
+        <div class="form-group" style="margin-bottom:0">
+          <label>单群每日上限 <small style="color:var(--text-muted)">（0=不限）</small></label>
+          <input type="number" id="inviter-daily-limit" class="input" value="0" min="0" style="width:80px">
+        </div>
+      </div>
+    </div>
+
+    <!-- 中间：用户列表 + 实时统计 -->
+    <div class="dm-mid-row">
+      <div class="card dm-users-card">
+        <div class="card-title">用户列表 <small style="color:var(--text-muted);text-transform:none;letter-spacing:0;font-weight:400">一行一个，支持 @用户名、手机号</small></div>
+        <textarea id="inviter-users-input" class="textarea" placeholder="@username&#10;+8613800138000&#10;..." style="flex:1;resize:none;height:100%;min-height:0"></textarea>
+      </div>
+      <div class="card dm-stat-card">
+        <div class="card-title">实时统计</div>
+        <div class="dm-stats">
+          <div class="dm-stat-item">
+            <div class="dm-stat-num success" id="inviter-success-num">0</div>
+            <div class="dm-stat-label">成功</div>
+          </div>
+          <div class="dm-stat-item">
+            <div class="dm-stat-num" style="color:var(--text-muted)" id="inviter-skipped-num">0</div>
+            <div class="dm-stat-label">跳过</div>
+          </div>
+          <div class="dm-stat-item">
+            <div class="dm-stat-num danger" id="inviter-failed-num">0</div>
+            <div class="dm-stat-label">失败</div>
+          </div>
+        </div>
+        <div style="margin-top:12px;font-size:12px;color:var(--text-muted);text-align:center">
+          任务结束后自动导出 Excel 日志<br>保存至 <b>日志/</b> 目录
+        </div>
+      </div>
+    </div>
+
+    <!-- 底部：运行日志 -->
+    <div class="card bc-log-card">
+      <div class="card-title">运行日志 <button class="btn btn-sm btn-ghost" onclick="clearLog('inviter-log')" style="float:right">清空</button></div>
+      <div class="log-box" id="inviter-log"></div>
+    </div>
+  </div>
+
+  <!-- ══ 综合工具页 ══ -->
+  <div class="page" id="page-tools">
+    <div class="page-header">
+      <h1 class="page-title">综合工具</h1>
+      <div class="header-actions" id="tools-dedup-actions">
+        <button class="btn btn-primary" onclick="runDedup()">去重</button>
+        <button class="btn btn-ghost" onclick="copyDedup()">复制结果</button>
+      </div>
+      <div class="header-actions" id="tools-webscraper-actions" style="display:none">
+        <span class="status-badge" id="webscraper-status-badge">空闲</span>
+        <button class="btn btn-primary" id="webscraper-start-btn" onclick="startWebScraper()">▷ 开始</button>
+        <button class="btn btn-danger" id="webscraper-stop-btn" onclick="stopWebScraper()" disabled>◼ 停止</button>
+      </div>
+      <div class="header-actions" id="tools-shuffle-actions" style="display:none">
+        <button class="btn btn-ghost" onclick="clearShuffle()">清空</button>
+        <button class="btn btn-ghost" onclick="copyShuffle()">复制结果</button>
+        <button class="btn btn-primary" onclick="runShuffle()">▷ 打乱</button>
+      </div>
+      <div class="header-actions" id="tools-proxy-actions" style="display:none">
+        <button class="btn btn-ghost" onclick="removeFailedProxies()">移除不可用</button>
+        <button class="btn btn-primary" onclick="runProxyCheck()">▷ 检测代理</button>
+      </div>
+    </div>
+
+    <!-- Tab 切换 -->
+    <div class="mode-tabs" style="margin-bottom:14px;max-width:500px">
+      <button class="mode-tab active" id="tools-tab-dedup" onclick="switchToolsTab('dedup')">链接去重</button>
+      <button class="mode-tab" id="tools-tab-webscraper" onclick="switchToolsTab('webscraper')">链接验活</button>
+      <button class="mode-tab" id="tools-tab-shuffle" onclick="switchToolsTab('shuffle')">文本行打乱</button>
+      <button class="mode-tab" id="tools-tab-proxy" onclick="switchToolsTab('proxy')">代理检测</button>
+    </div>
+
+    <!-- 链接去重面板 -->
+    <div id="tools-panel-dedup" style="display:flex;flex-direction:column;flex:1;min-height:0">
+      <div class="dm-mid-row" style="flex:1;min-height:0">
+        <div class="card dm-users-card">
+          <div class="card-title">输入链接 <small style="color:var(--text-muted);text-transform:none;letter-spacing:0;font-weight:400">每行一个，支持 t.me/ 链接或 @用户名</small></div>
+          <textarea id="dedup-input" class="textarea" placeholder="https://t.me/xxx&#10;@username&#10;t.me/+inviteHash&#10;..." style="flex:1;resize:none;height:100%;min-height:0"></textarea>
+        </div>
+        <div class="card dm-users-card">
+          <div class="card-title" style="display:flex;align-items:center;justify-content:space-between">
+            <span>去重结果</span>
+            <span id="dedup-stats" style="font-size:12px;color:var(--text-muted);font-weight:400;text-transform:none;letter-spacing:0"></span>
+          </div>
+          <textarea id="dedup-output" class="textarea" placeholder="去重后的链接将显示在这里..." style="flex:1;resize:none;height:100%;min-height:0" readonly></textarea>
+        </div>
+      </div>
+    </div>
+
+    <!-- 链接验活面板 -->
+    <div id="tools-panel-webscraper" style="display:none;flex-direction:column;flex:1;min-height:0">
+      <div class="bc-top-row">
+        <div class="card bc-interval-card">
+          <div class="card-title">过滤设置</div>
+          <div style="display:flex;flex-direction:column;gap:12px">
+            <div class="form-group" style="margin-bottom:0">
+              <label>并发线程数</label>
+              <input type="number" id="ws-threads" class="input" value="3" min="1" style="width:70px">
+            </div>
+            <div class="form-group" style="margin-bottom:0">
+              <label>公开群组最低成员数</label>
+              <input type="number" id="ws-public-min" class="input" value="300" min="0" style="width:90px">
+            </div>
+            <div class="form-group" style="margin-bottom:0">
+              <label>私密群组最低成员数</label>
+              <input type="number" id="ws-private-min" class="input" value="150000" min="0" style="width:100px">
+            </div>
+            <div class="form-group" style="margin-bottom:0">
+              <label>排除关键词 <small style="color:var(--text-muted)">（逗号分隔）</small></label>
+              <input type="text" id="ws-exclude" class="input" value="退押,暂停交易">
+            </div>
+          </div>
+        </div>
+        <div class="card bc-mode-card">
+          <div class="card-title">输入文件 <small style="color:var(--text-muted);text-transform:none;letter-spacing:0;font-weight:400">点击用记事本打开编辑</small></div>
+          <div style="display:flex;flex-direction:column;gap:8px;margin-top:4px">
+            <div class="preset-file-row">
+              <span class="preset-file-label">链接列表</span>
+              <button class="btn btn-sm btn-ghost preset-file-btn" onclick="openPresetFile('links.txt')">links.txt</button>
+            </div>
+          </div>
+          <p style="color:var(--text-muted);font-size:12px;margin-top:10px">
+            每行一个 t.me/ 链接<br>
+            结果保存为 <code>已检测链接_时间戳.xlsx</code>
+          </p>
+        </div>
+      </div>
+      <div class="card bc-log-card">
+        <div class="card-title">运行日志 <button class="btn btn-sm btn-ghost" onclick="clearLog('webscraper-log')" style="float:right">清空</button></div>
+        <div id="webscraper-progress" style="font-size:13px;color:#9ca3af;padding:4px 0 6px;min-height:20px;"></div>
+        <div class="log-box" id="webscraper-log"></div>
+      </div>
+    </div>
+    <!-- 文本行打乱面板 -->
+    <div id="tools-panel-shuffle" style="display:none;flex-direction:column;flex:1;min-height:0">
+      <div class="dm-mid-row" style="flex:1;min-height:0">
+        <div class="card dm-users-card">
+          <div class="card-title">输入文本 <small style="color:var(--text-muted);text-transform:none;letter-spacing:0;font-weight:400">每行一条</small></div>
+          <textarea id="shuffle-input" class="textarea" placeholder="每行输入一条内容..." style="flex:1;resize:none;height:100%;min-height:0"></textarea>
+        </div>
+        <div class="card dm-users-card">
+          <div class="card-title" style="display:flex;align-items:center;justify-content:space-between">
+            <span>打乱结果</span>
+            <span id="shuffle-stats" style="font-size:12px;color:var(--text-muted);font-weight:400;text-transform:none;letter-spacing:0"></span>
+          </div>
+          <textarea id="shuffle-output" class="textarea" placeholder="打乱后的内容将显示在这里（预览前1000行）..." style="flex:1;resize:none;height:100%;min-height:0" readonly></textarea>
+        </div>
+      </div>
+    </div>
+
+    <!-- 代理检测面板 -->
+    <div id="tools-panel-proxy" style="display:none;flex-direction:column;flex:1;min-height:0">
+      <div class="dm-mid-row" style="flex:1;min-height:0">
+        <div class="card dm-users-card" style="flex:1.2">
+          <div class="card-title" style="display:flex;align-items:center;justify-content:space-between">
+            <span>代理列表 <small style="color:var(--text-muted);text-transform:none;letter-spacing:0;font-weight:400">每行一个，格式: [user:pass@]host:port</small></span>
+            <div style="display:flex;align-items:center;gap:6px">
+              <span style="font-size:12px;color:var(--text-muted)">类型</span>
+              <select id="proxy-check-type" class="input" style="width:90px;padding:3px 6px;font-size:12px">
+                <option value="socks5">SOCKS5</option>
+                <option value="socks4">SOCKS4</option>
+                <option value="http">HTTP</option>
+              </select>
+            </div>
+          </div>
+          <textarea id="proxy-check-input" class="textarea" placeholder="user:pass@1.2.3.4:1080&#10;1.2.3.4:1080" style="flex:1;resize:none;height:100%;min-height:0"></textarea>
+        </div>
+        <div class="card dm-users-card" style="flex:1">
+          <div class="card-title" style="display:flex;align-items:center;justify-content:space-between">
+            <span>检测结果</span>
+            <span id="proxy-check-stats" style="font-size:12px;color:var(--text-muted);font-weight:400;text-transform:none;letter-spacing:0"></span>
+          </div>
+          <div id="proxy-check-results" style="flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:4px;min-height:0">
+            <div style="color:var(--text-muted);font-size:12px;padding:8px 0">点击"检测代理"开始检测</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ══ 活跃度检测页 ══ -->
+  <div class="page" id="page-checker">
+    <div class="page-header">
+      <h1 class="page-title">活跃度检测</h1>
+      <div class="header-actions">
+        <span class="status-badge" id="checker-status-badge">空闲</span>
+        <button class="btn btn-ghost" onclick="showSelectAccountModal('checker')">选择账号 <span class="count-badge" id="checker-account-count">全部</span></button>
+        <button class="btn btn-primary" id="checker-start-btn" onclick="startChecker()">▷ 开始检测</button>
+        <button class="btn btn-danger" id="checker-stop-btn" onclick="stopChecker()" disabled>◼ 停止</button>
+      </div>
+    </div>
+
+    <div class="bc-top-row">
+      <div class="card bc-interval-card">
+        <div class="card-title">检测设置</div>
+        <div style="display:flex;gap:24px;flex-wrap:wrap">
+          <div class="form-group" style="flex:0 0 auto;margin-bottom:0">
+            <label>活跃时限（小时）</label>
+            <input type="number" id="checker-hours" class="input" value="24" min="1" style="width:80px">
+          </div>
+          <div class="form-group" style="flex:0 0 auto;margin-bottom:0">
+            <label>群组间隔（秒）</label>
+            <div class="range-input">
+              <input type="number" id="checker-interval-min" class="input" value="3" min="1">
+              <span>~</span>
+              <input type="number" id="checker-interval-max" class="input" value="8" min="1">
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="dm-mid-row">
+      <div class="card dm-users-card">
+        <div class="card-title">群组链接 <small style="color:var(--text-muted);text-transform:none;letter-spacing:0;font-weight:400">一行一个</small></div>
+        <textarea id="checker-input" class="textarea" placeholder="@groupname&#10;https://t.me/groupname&#10;..." style="flex:1;resize:none;height:100%;min-height:0"></textarea>
+      </div>
+      <div class="card dm-users-card">
+        <div class="card-title" style="display:flex;align-items:center;justify-content:space-between">
+          <span>活跃群组结果</span>
+          <button class="btn btn-sm btn-ghost" onclick="copyCheckerResult()">复制</button>
+        </div>
+        <textarea id="checker-output" class="textarea" placeholder="活跃群组将显示在这里..." style="flex:1;resize:none;height:100%;min-height:0" readonly></textarea>
+      </div>
+    </div>
+
+    <div class="card bc-log-card">
+      <div class="card-title">运行日志 <button class="btn btn-sm btn-ghost" onclick="clearLog('checker-log')" style="float:right">清空</button></div>
+      <div class="log-box" id="checker-log"></div>
+    </div>
+  </div>
+
+  <!-- ══ 链接验活页 ══ -->
+  <!-- 采集结果查看弹窗 -->
+  <div class="modal-overlay" id="modal-scraper-results">
+    <div class="modal modal-lg">
+      <div class="modal-header">
+        <h2>采集结果 <span class="count-badge" id="modal-sc-count">0</span></h2>
+        <button class="modal-close" onclick="closeModal('modal-scraper-results')">✕</button>
+      </div>
+      <div class="modal-body">
+        <p style="color:var(--text-muted);font-size:12px;margin-bottom:8px">显示前 200 条，完整结果请打开文件查看</p>
+        <div class="list-items" id="sc-result-list" style="max-height:400px"></div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-ghost" onclick="openScraperResultFile()">打开文件位置</button>
+        <button class="btn btn-ghost" onclick="closeModal('modal-scraper-results')">关闭</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ══ 群成员采集页 ══ -->
+  <div class="page" id="page-member-scraper">
+    <div class="page-header">
+      <h1 class="page-title">群成员采集</h1>
+      <div class="header-actions">
+        <span class="status-badge" id="ms-status-badge">空闲</span>
+        <button class="btn btn-ghost" onclick="showSelectAccountModal('member-scraper')">选择账号 <span class="count-badge" id="ms-account-count">全部</span></button>
+        <button class="btn btn-primary" id="ms-start-btn" onclick="startMemberScraper()">▷ 开始采集</button>
+        <button class="btn btn-danger" id="ms-stop-btn" onclick="stopMemberScraper()" disabled>◼ 停止</button>
+      </div>
+    </div>
+
+    <!-- 主体：左侧目标群组撑满，右侧设置+统计纵向 -->
+    <div class="ms-body-row">
+      <!-- 左：目标群组（撑满到运行日志上方） -->
+      <div class="card ms-groups-card">
+        <div class="card-title">目标群组 <small style="color:var(--text-muted);text-transform:none;letter-spacing:0;font-weight:400">一行一个，支持 @用户名 或 t.me/ 链接</small></div>
+        <textarea id="ms-groups-input" class="textarea" placeholder="@groupname&#10;https://t.me/groupname&#10;..." style="flex:1;resize:none;min-height:0"></textarea>
+      </div>
+
+      <!-- 右：采集设置 + 实时统计 纵向排列 -->
+      <div class="ms-right-col">
+        <!-- 采集设置 -->
+        <div class="card" style="margin-bottom:8px;padding:10px 14px;flex:1;min-height:0;overflow-y:auto">
+          <div class="card-title" style="margin-bottom:5px">采集设置</div>
+          <div style="display:flex;flex-direction:column;gap:4px">
+            <div class="form-group" style="margin-bottom:0">
+              <label style="font-size:11px;color:var(--text-muted)">每群最多采集人数 <small>（0=不限）</small></label>
+              <input type="number" id="ms-limit" class="input" value="0" min="0" style="width:80px;height:26px;padding:1px 8px">
+            </div>
+            <div style="border-top:1px solid var(--border);padding-top:4px;display:flex;flex-direction:column;gap:3px">
+              <div style="font-size:10px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px">过滤条件（勾选的全部满足）</div>
+              <label class="toggle-label" style="font-size:12px"><input type="checkbox" id="ms-filter-premium"><span>已开通 Telegram 会员</span></label>
+              <label class="toggle-label" style="font-size:12px">
+                <input type="checkbox" id="ms-filter-online">
+                <span>最近在线 <input type="number" id="ms-online-days" class="input" value="1" min="1" style="width:36px;display:inline-block;margin:0 3px;padding:1px 4px;height:22px"> 天内</span>
+              </label>
+              <label class="toggle-label" style="font-size:12px"><input type="checkbox" id="ms-filter-photo"><span>设置了头像</span></label>
+            </div>
+            <div style="border-top:1px solid var(--border);padding-top:4px;display:flex;flex-direction:column;gap:3px">
+              <div style="font-size:10px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px">隐藏成员回退</div>
+              <label class="toggle-label" style="font-size:12px"><input type="checkbox" id="ms-fallback-msg" checked><span>无法拉取成员时从消息记录采集</span></label>
+              <div style="display:flex;align-items:center;gap:6px">
+                <label style="font-size:11px;color:var(--text-muted);white-space:nowrap">扫描消息数量</label>
+                <input type="number" id="ms-msg-limit" class="input" value="3000" min="100" style="width:80px;height:26px;padding:1px 8px">
+              </div>
+            </div>
+            <div style="border-top:1px solid var(--border);padding-top:4px;display:flex;flex-direction:column;gap:3px">
+              <div style="font-size:10px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px">群组间隔（秒）</div>
+              <div style="display:flex;align-items:center;gap:6px">
+                <input type="number" id="ms-interval-min" class="input" value="3" min="0" style="width:55px;height:26px;padding:1px 8px">
+                <span style="font-size:11px;color:var(--text-muted)">~</span>
+                <input type="number" id="ms-interval-max" class="input" value="8" min="0" style="width:55px;height:26px;padding:1px 8px">
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 实时统计 -->
+        <div class="card" style="margin-bottom:0;padding:8px 14px;flex:0 0 auto">
+          <div class="card-title" style="margin-bottom:6px">实时统计</div>
+          <div style="display:flex;gap:16px;align-items:center">
+            <div style="text-align:center">
+              <div style="font-size:20px;font-weight:700;color:var(--success)" id="ms-total-num">0</div>
+              <div style="font-size:11px;color:var(--text-muted)">已采集</div>
+            </div>
+            <div style="text-align:center">
+              <div style="font-size:20px;font-weight:700;color:var(--accent)" id="ms-groups-num">0</div>
+              <div style="font-size:11px;color:var(--text-muted)">已处理群组</div>
+            </div>
+            <button class="btn btn-sm btn-ghost" style="margin-left:auto" onclick="openMsResultFile()">打开结果文件</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 底部：运行日志 -->
+    <div class="card bc-log-card">
+      <div class="card-title">运行日志 <button class="btn btn-sm btn-ghost" onclick="clearLog('ms-log')" style="float:right">清空</button></div>
+      <div class="log-box" id="ms-log"></div>
+    </div>
+  </div>
+
+</main>
+<!-- ══ 弹窗层 ══ -->
+
+<!-- 关键词管理弹窗 -->
+<div class="modal-overlay" id="modal-keywords">
+  <div class="modal modal-lg">
+    <div class="modal-header">
+      <h2>关键词管理</h2>
+      <button class="modal-close" onclick="closeModal('modal-keywords')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>一行一个关键词</label>
+        <div class="input-row">
+          <textarea id="sc-kw-input" class="textarea" rows="3" placeholder="关键词1&#10;关键词2&#10;..."></textarea>
+          <button class="btn btn-ghost" onclick="scAddKeywords()">添加</button>
+        </div>
+      </div>
+      <div class="list-items" id="sc-kw-modal-list"></div>
+    </div>
+    <div class="modal-footer" style="justify-content:space-between">
+      <div style="display:flex;gap:6px">
+        <button class="btn btn-sm btn-ghost" onclick="scKwSelectAll()">全选</button>
+        <button class="btn btn-sm btn-ghost" onclick="scKwDeselectAll()">取消全选</button>
+        <button class="btn btn-sm btn-ghost btn-danger" onclick="scDeleteSelectedKeywords()">删除选中</button>
+      </div>
+      <button class="btn btn-ghost" onclick="closeModal('modal-keywords')">关闭</button>
+    </div>
+  </div>
+</div>
+
+<!-- 账号选择弹窗（群发/私信/采集器共用） -->
+<div class="modal-overlay" id="modal-sc-accounts">
+  <div class="modal modal-lg">
+    <div class="modal-header">
+      <h2 id="modal-sc-accounts-title">选择账号</h2>
+      <button class="modal-close" onclick="closeModal('modal-sc-accounts')">✕</button>
+    </div>
+    <div class="modal-body">
+      <p style="color:var(--text-muted);font-size:12px;margin-bottom:10px">不勾选任何账号则使用全部账号</p>
+      <div class="account-list" id="sc-account-list" style="max-height:400px;overflow-y:auto"></div>
+    </div>
+    <div class="modal-footer" style="justify-content:space-between">
+      <div style="display:flex;gap:6px">
+        <button class="btn btn-sm btn-ghost" onclick="scSelectAllAccounts()">全选</button>
+        <button class="btn btn-sm btn-ghost" onclick="scDeselectAllAccounts()">取消全选</button>
+      </div>
+      <button class="btn btn-ghost" onclick="closeModal('modal-sc-accounts')">确定</button>
+    </div>
+  </div>
+</div>
+
+<!-- 监听私信 - 私信账号选择弹窗 -->
+<div class="modal-overlay" id="modal-monitor-dm-accounts">
+  <div class="modal modal-lg">
+    <div class="modal-header">
+      <h2>选择私信账号</h2>
+      <button class="modal-close" onclick="closeModal('modal-monitor-dm-accounts')">✕</button>
+    </div>
+    <div class="modal-body">
+      <p style="color:var(--text-muted);font-size:12px;margin-bottom:10px">私信账号与监听账号不能重叠</p>
+      <div class="account-list" id="monitor-dm-account-list" style="max-height:400px;overflow-y:auto"></div>
+    </div>
+    <div class="modal-footer" style="justify-content:space-between">
+      <div style="display:flex;gap:6px">
+        <button class="btn btn-sm btn-ghost" onclick="monitorDmSelectAll()">全选</button>
+        <button class="btn btn-sm btn-ghost" onclick="monitorDmDeselectAll()">取消全选</button>
+      </div>
+      <button class="btn btn-ghost" onclick="closeModal('modal-monitor-dm-accounts')">确定</button>
+    </div>
+  </div>
+</div>
+
+<!-- 监听私信 - 私信配置弹窗 -->
+<div class="modal-overlay" id="modal-monitor-dm-cfg">
+  <div class="modal modal-xl">
+    <div class="modal-header">
+      <h2>私信配置</h2>
+      <button class="modal-close" onclick="closeModal('modal-monitor-dm-cfg')">✕</button>
+    </div>
+    <div class="modal-body" style="padding:16px 20px">
+      <!-- 是否开启 -->
+      <div style="margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid var(--border)">
+        <label class="toggle-label">
+          <input type="checkbox" id="monitor-dm-enable" onchange="toggleMonitorDm(this)">
+          <span style="font-weight:600">开启自动私信（命中关键词后自动发送）</span>
+        </label>
+      </div>
+
+      <!-- 发送模式 tabs -->
+      <div class="card-title" style="margin-bottom:8px">发送模式</div>
+      <div class="mode-tabs" id="monitor-dm-mode-tabs">
+        <button class="mode-tab active" data-mode="直发" onclick="switchMonitorDmMode('直发', this)">直发</button>
+        <button class="mode-tab" data-mode="引用转发" onclick="switchMonitorDmMode('引用转发', this)">引用转发</button>
+        <button class="mode-tab" data-mode="转发" onclick="switchMonitorDmMode('转发', this)">转发</button>
+        <button class="mode-tab" data-mode="Post" onclick="switchMonitorDmMode('Post', this)">Post</button>
+        <button class="mode-tab" data-mode="贴纸" onclick="switchMonitorDmMode('贴纸', this)">贴纸</button>
+        <button class="mode-tab" data-mode="名片" onclick="switchMonitorDmMode('名片', this)">名片</button>
+      </div>
+
+      <div class="mode-panel active" id="monitor-dm-panel-直发">
+        <div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap">
+          <div style="display:flex;align-items:center;gap:8px">
+            <span style="font-size:12px;color:var(--text-muted)">发送文案</span>
+            <span class="count-badge" id="monitor-dm-direct-count">0</span>
+            <button class="btn btn-sm btn-ghost" onclick="showDirectMediaModal('dm')">管理</button>
+          </div>
+          <label class="toggle-label"><input type="checkbox" id="monitor-dm-direct-random"><span>随机发送</span></label>
+        </div>
+      </div>
+
+      <div class="mode-panel" id="monitor-dm-panel-引用转发">
+        <div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap">
+          <div style="display:flex;align-items:center;gap:8px">
+            <span style="font-size:12px;color:var(--text-muted)">消息链接</span>
+            <span class="count-badge" id="monitor-dm-link-count">0</span>
+            <button class="btn btn-sm btn-ghost" onclick="showListModal('dm_links','私信链接','https://t.me/...')">管理</button>
+          </div>
+          <div style="display:flex;align-items:center;gap:8px">
+            <span style="font-size:12px;color:var(--text-muted)">回复文本</span>
+            <span class="count-badge" id="monitor-dm-text-count">0</span>
+            <button class="btn btn-sm btn-ghost" onclick="showListModal('dm_reply_texts','私信回复文本','文本内容')">管理</button>
+          </div>
+          <label class="toggle-label"><input type="checkbox" id="monitor-dm-random-send"><span>随机发送</span></label>
+        </div>
+      </div>
+
+      <div class="mode-panel" id="monitor-dm-panel-转发">
+        <div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap">
+          <div style="display:flex;align-items:center;gap:8px">
+            <span style="font-size:12px;color:var(--text-muted)">消息链接</span>
+            <span class="count-badge" id="monitor-dm-fwd-count">0</span>
+            <button class="btn btn-sm btn-ghost" onclick="showListModal('dm_forward_links','私信转发链接','https://t.me/...')">管理</button>
+          </div>
+          <label class="toggle-label"><input type="checkbox" id="monitor-dm-fwd-hide"><span>隐藏来源</span></label>
+          <label class="toggle-label"><input type="checkbox" id="monitor-dm-fwd-random"><span>随机发送</span></label>
+        </div>
+      </div>
+
+      <div class="mode-panel" id="monitor-dm-panel-Post">
+        <div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap">
+          <div style="display:flex;align-items:center;gap:8px">
+            <span style="font-size:12px;color:var(--text-muted)">分享码</span>
+            <span class="count-badge" id="monitor-dm-post-count">0</span>
+            <button class="btn btn-sm btn-ghost" onclick="showListModal('dm_post_codes','私信分享码','分享码')">管理</button>
+          </div>
+          <label class="toggle-label"><input type="checkbox" id="monitor-dm-post-random"><span>随机发送</span></label>
+        </div>
+      </div>
+
+      <div class="mode-panel" id="monitor-dm-panel-贴纸">
+        <div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap">
+          <div style="display:flex;align-items:center;gap:8px">
+            <span style="font-size:12px;color:var(--text-muted)">贴纸包</span>
+            <span class="count-badge" id="monitor-dm-sticker-count">0</span>
+            <button class="btn btn-sm btn-ghost" onclick="showListModal('dm_sticker_packs','私信贴纸包链接','https://t.me/addstickers/PackName')">管理</button>
+          </div>
+          <span style="font-size:11px;color:var(--text-muted)">从所有贴纸包中随机发一张</span>
+        </div>
+      </div>
+
+      <div class="mode-panel" id="monitor-dm-panel-名片">
+        <div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap">
+          <div style="display:flex;align-items:center;gap:8px">
+            <span style="font-size:12px;color:var(--text-muted)">名片列表</span>
+            <span class="count-badge" id="monitor-dm-contact-count">0</span>
+            <button class="btn btn-sm btn-ghost" onclick="showContactModal('dm')">管理</button>
+          </div>
+          <label class="toggle-label"><input type="checkbox" id="monitor-dm-contact-random" checked><span>随机发送</span></label>
+        </div>
+      </div>
+
+      <!-- 冷却时间 -->
+      <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--border)">
+        <div class="form-group" style="margin-bottom:0;display:flex;align-items:center;gap:12px">
+          <label style="margin-bottom:0;white-space:nowrap">冷却时间（秒）</label>
+          <input type="number" id="monitor-dm-cooldown" class="input" value="300" min="0" style="width:80px">
+          <small style="color:var(--text-muted)">同一用户重复命中的最小间隔</small>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-monitor-dm-cfg')">关闭</button>
+      <button class="btn btn-primary" onclick="saveMonitorConfig();closeModal('modal-monitor-dm-cfg')">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- 监听私信 - 收到私信自动回复配置弹窗 -->
+<div class="modal-overlay" id="modal-monitor-private-reply-cfg">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>收到私信自动回复</h2>
+      <button class="modal-close" onclick="closeModal('modal-monitor-private-reply-cfg')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div style="margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid var(--border)">
+        <label class="toggle-label">
+          <input type="checkbox" id="monitor-private-reply-enable" onchange="toggleMonitorPrivateReply(this)">
+          <span style="font-weight:600">启用收到私信自动回复</span>
+        </label>
+      </div>
+      <div class="form-group">
+        <label>回复内容</label>
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <span class="count-badge" id="monitor-private-reply-count">0</span>
+          <button class="btn btn-sm btn-ghost" onclick="showListModal('monitor_private_reply_texts','私信自动回复内容','你好，请问有什么需要了解的？')">管理</button>
+          <label class="toggle-label" style="font-size:12px">
+            <input type="checkbox" id="monitor-private-reply-random" checked>
+            <span>随机回复</span>
+          </label>
+        </div>
+      </div>
+      <div class="form-group" style="display:flex;align-items:center;gap:12px">
+        <label style="margin-bottom:0;white-space:nowrap">同用户冷却（秒）</label>
+        <input type="number" id="monitor-private-reply-cooldown" class="input" value="300" min="0" style="width:90px">
+      </div>
+      <div class="form-group" style="margin-bottom:0;display:flex;align-items:center;gap:12px">
+        <label style="margin-bottom:0;white-space:nowrap">回复延迟（秒）</label>
+        <input type="number" id="monitor-private-reply-delay-min" class="input" value="3" min="0" step="0.5" style="width:70px">
+        <span style="color:var(--text-muted)">~</span>
+        <input type="number" id="monitor-private-reply-delay-max" class="input" value="8" min="0" step="0.5" style="width:70px">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-monitor-private-reply-cfg')">关闭</button>
+      <button class="btn btn-primary" onclick="saveMonitorConfig();closeModal('modal-monitor-private-reply-cfg')">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- 监听私信 - 群内回复配置弹窗 -->
+<div class="modal-overlay" id="modal-monitor-reply-cfg">
+  <div class="modal modal-lg">
+    <div class="modal-header">
+      <h2>群内回复配置</h2>
+      <button class="modal-close" onclick="closeModal('modal-monitor-reply-cfg')">✕</button>
+    </div>
+    <div class="modal-body" style="padding:16px 20px">
+      <!-- 是否开启 -->
+      <div style="margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid var(--border)">
+        <label class="toggle-label">
+          <input type="checkbox" id="monitor-reply-enable" onchange="toggleMonitorReply(this)">
+          <span style="font-weight:600">开启群内回复（命中关键词后在群内回复该消息）</span>
+        </label>
+      </div>
+
+      <!-- 发送模式 -->
+      <div class="card-title" style="margin-bottom:8px">发送模式</div>
+      <div class="mode-tabs" id="monitor-reply-mode-tabs">
+        <button class="mode-tab active" data-mode="直发" onclick="switchMonitorReplyMode('直发', this)">直发</button>
+        <button class="mode-tab" data-mode="贴纸" onclick="switchMonitorReplyMode('贴纸', this)">贴纸</button>
+      </div>
+
+      <div class="mode-panel active" id="monitor-reply-panel-直发">
+        <div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap">
+          <div style="display:flex;align-items:center;gap:8px">
+            <span style="font-size:12px;color:var(--text-muted)">回复文案</span>
+            <span class="count-badge" id="monitor-reply-direct-count">0</span>
+            <button class="btn btn-sm btn-ghost" onclick="showDirectMediaModal('monitor_reply')">管理</button>
+          </div>
+          <label class="toggle-label"><input type="checkbox" id="monitor-reply-direct-random"><span>随机发送</span></label>
+        </div>
+      </div>
+
+      <div class="mode-panel" id="monitor-reply-panel-贴纸">
+        <div style="display:flex;gap:16px;align-items:center;flex-wrap:wrap">
+          <div style="display:flex;align-items:center;gap:8px">
+            <span style="font-size:12px;color:var(--text-muted)">贴纸包</span>
+            <span class="count-badge" id="monitor-reply-sticker-count">0</span>
+            <button class="btn btn-sm btn-ghost" onclick="showListModal('monitor_reply_sticker_packs','回复贴纸包链接','https://t.me/addstickers/PackName')">管理</button>
+          </div>
+          <span style="font-size:11px;color:var(--text-muted)">从所有贴纸包中随机发一张</span>
+        </div>
+      </div>
+
+      <!-- 冷却时间 + 发送延迟 -->
+      <div style="margin-top:14px;padding-top:12px;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:10px">
+        <div class="form-group" style="margin-bottom:0;display:flex;align-items:center;gap:12px">
+          <label style="margin-bottom:0;white-space:nowrap">冷却时间（秒）</label>
+          <input type="number" id="monitor-reply-cooldown" class="input" value="60" min="0" style="width:80px">
+          <small style="color:var(--text-muted)">同一群组重复命中的最小间隔</small>
+        </div>
+        <div class="form-group" style="margin-bottom:0;display:flex;align-items:center;gap:12px">
+          <label style="margin-bottom:0;white-space:nowrap">发送延迟（秒）</label>
+          <input type="number" id="monitor-reply-delay-min" class="input" value="3" min="0" step="0.5" style="width:70px">
+          <span style="color:var(--text-muted)">~</span>
+          <input type="number" id="monitor-reply-delay-max" class="input" value="8" min="0" step="0.5" style="width:70px">
+          <small style="color:var(--text-muted)">命中后随机等待再回复，模拟人工操作</small>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-monitor-reply-cfg')">关闭</button>
+      <button class="btn btn-primary" onclick="saveMonitorConfig();closeModal('modal-monitor-reply-cfg')">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- 监听私信 - 表情反应配置弹窗 -->
+<div class="modal-overlay" id="modal-monitor-react-cfg">
+  <div class="modal modal-lg">
+    <div class="modal-header">
+      <h2>表情反应配置</h2>
+      <button class="modal-close" onclick="closeModal('modal-monitor-react-cfg')">✕</button>
+    </div>
+    <div class="modal-body" style="padding:16px 20px">
+      <!-- 开关 -->
+      <div style="margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid var(--border)">
+        <label class="toggle-label">
+          <input type="checkbox" id="monitor-react-enable" onchange="toggleMonitorReact(this)">
+          <span style="font-weight:600">开启表情反应（命中关键词后对该消息点表情）</span>
+        </label>
+      </div>
+
+      <!-- 表情池 -->
+      <div style="margin-bottom:14px">
+        <div class="card-title" style="margin-bottom:6px">表情池 <small style="font-weight:400;color:var(--text-muted)">（逗号分隔，留空使用内置 80+ 个表情）</small></div>
+        <input type="text" id="monitor-react-emojis" class="input" style="width:100%"
+          placeholder="👍,❤️,🔥,🎉,😍,🤩,👏,💯 …">
+        <div style="margin-top:6px;font-size:11px;color:var(--text-muted)">
+          快速填入：
+          <a href="#" onclick="setVal('monitor-react-emojis','👍,❤,🔥,🎉,😍,🤩,👏,💯,✅,😊');return false" style="color:var(--accent)">正向</a> ·
+          <a href="#" onclick="setVal('monitor-react-emojis','👍,❤,🔥,🎉,🌟,💎,🏆,🥇,🚀,💪');return false" style="color:var(--accent)">品牌</a> ·
+          <a href="#" onclick="setVal('monitor-react-emojis','');return false" style="color:var(--text-muted)">清空（用内置）</a>
+        </div>
+      </div>
+
+      <!-- 大表情 -->
+      <div style="margin-bottom:14px">
+        <label class="toggle-label">
+          <input type="checkbox" id="monitor-react-big">
+          <span>发送大表情动画（更显眼，但频率不宜过高）</span>
+        </label>
+      </div>
+
+      <!-- 冷却 + 延迟 -->
+      <div style="padding-top:12px;border-top:1px solid var(--border);display:flex;flex-direction:column;gap:10px">
+        <div class="form-group" style="margin-bottom:0;display:flex;align-items:center;gap:12px">
+          <label style="margin-bottom:0;white-space:nowrap">用户冷却（秒）</label>
+          <input type="number" id="monitor-react-cooldown" class="input" value="600" min="0" style="width:90px">
+          <small style="color:var(--text-muted)">同一用户重复命中的最小间隔</small>
+        </div>
+        <div class="form-group" style="margin-bottom:0;display:flex;align-items:center;gap:12px">
+          <label style="margin-bottom:0;white-space:nowrap">发送延迟（秒）</label>
+          <input type="number" id="monitor-react-delay-min" class="input" value="2" min="0" step="0.5" style="width:70px">
+          <span style="color:var(--text-muted)">~</span>
+          <input type="number" id="monitor-react-delay-max" class="input" value="8" min="0" step="0.5" style="width:70px">
+          <small style="color:var(--text-muted)">命中后随机等待再点赞</small>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-monitor-react-cfg')">关闭</button>
+      <button class="btn btn-primary" onclick="saveMonitorConfig();closeModal('modal-monitor-react-cfg')">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- 监听私信 - Bot 推送配置弹窗 -->
+<div class="modal-overlay" id="modal-monitor-bot-cfg">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>Bot 推送配置</h2>
+      <button class="modal-close" onclick="closeModal('modal-monitor-bot-cfg')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div style="margin-bottom:14px;padding-bottom:12px;border-bottom:1px solid var(--border)">
+        <label class="toggle-label">
+          <input type="checkbox" id="monitor-bot-enable" onchange="toggleMonitorBot(this)">
+          <span style="font-weight:600">开启 Bot 推送（命中关键词后推送通知）</span>
+        </label>
+      </div>
+      <div class="form-group">
+        <label>Bot Token</label>
+        <input type="text" id="monitor-bot-token" class="input" placeholder="123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11">
+        <small style="color:var(--text-muted);font-size:11px;margin-top:4px;display:block">从 @BotFather 获取</small>
+      </div>
+      <div class="form-group" style="margin-bottom:0">
+        <label>推送目标 Chat ID</label>
+        <input type="text" id="monitor-bot-chat-id" class="input" placeholder="你的 user_id（从 @userinfobot 获取）">
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-monitor-bot-cfg')">关闭</button>
+      <button class="btn btn-primary" onclick="saveMonitorConfig();closeModal('modal-monitor-bot-cfg')">保存</button>
+    </div>
+  </div>
+</div>
+<div class="modal-overlay" id="modal-login">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>登录 Telegram 账号</h2>
+      <button class="modal-close" onclick="closeModal('modal-login')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label>手机号码</label>
+        <input type="text" id="login-phone" class="input" placeholder="+86 138 0000 0000">
+      </div>
+      <div class="form-group">
+        <label>API 模式</label>
+        <select id="login-api-mode" class="input" style="height:34px">
+          <option value="official_desktop">官方桌面版 (TelegramDesktop)</option>
+          <option value="custom">自定义 API（配置页设置）</option>
+        </select>
+        <div style="font-size:11px;color:var(--text-muted);margin-top:4px">官方 API 登录封号率更低，推荐使用桌面版</div>
+      </div>
+      <div class="form-group">
+        <label>验证码</label>
+        <div class="input-row">
+          <input type="text" id="login-code" class="input" placeholder="收到验证码后填写">
+          <button class="btn btn-ghost" onclick="sendCode()">发送验证码</button>
+        </div>
+      </div>
+      <div class="form-group">
+        <label>两步验证密码 <small style="color:var(--text-muted)">（没有可留空）</small></label>
+        <input type="password" id="login-password" class="input" placeholder="可选">
+      </div>
+      <div id="login-status" style="color:var(--text-muted);font-size:13px;min-height:20px"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-login')">取消</button>
+      <button class="btn btn-primary" onclick="verifyCode()">验证登录</button>
+    </div>
+  </div>
+</div>
+
+
+<!-- 接码弹窗 -->
+<div class="modal-overlay" id="modal-fetch-code">
+  <div class="modal" style="width:420px">
+    <div class="modal-header">
+      <h2>接收登录验证码</h2>
+      <button class="modal-close" onclick="closeFetchCodeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div style="font-size:12px;color:var(--text-muted);margin-bottom:12px">
+        账号：<span id="fc-session-name" style="color:var(--text-primary);font-weight:600"></span>
+      </div>
+      <div id="fc-result-wrap" style="display:none">
+        <div style="text-align:center;padding:16px 0">
+          <div style="font-size:13px;color:var(--text-muted);margin-bottom:8px">验证码</div>
+          <div id="fc-code" style="font-size:36px;font-weight:700;letter-spacing:8px;color:var(--accent);font-family:monospace;cursor:pointer" onclick="copyFetchCode()" title="点击复制"></div>
+          <div id="fc-code-time" style="font-size:11px;color:var(--text-muted);margin-top:6px"></div>
+          <div id="fc-code-text" style="font-size:11px;color:var(--text-muted);margin-top:8px;word-break:break-all;max-width:320px;margin-left:auto;margin-right:auto"></div>
+        </div>
+      </div>
+      <div id="fc-empty" style="text-align:center;padding:20px 0;color:var(--text-muted);font-size:13px">暂无验证码，等待中...</div>
+      <div id="fc-error" style="display:none;color:var(--danger);font-size:13px;text-align:center;padding:8px 0"></div>
+    </div>
+    <div class="modal-footer" style="justify-content:space-between">
+      <span id="fc-countdown" style="font-size:12px;color:var(--text-muted)"></span>
+      <div style="display:flex;gap:8px">
+        <button class="btn btn-ghost" onclick="fetchCodeNow()">立即刷新</button>
+        <button class="btn btn-ghost" onclick="closeFetchCodeModal()">关闭</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 列表管理弹窗（通用） -->
+<div class="modal-overlay" id="modal-list">
+  <div class="modal modal-xl" style="width:820px;max-height:90vh">
+    <div class="modal-header">
+      <h2 id="modal-list-title">管理列表</h2>
+      <button class="modal-close" onclick="closeModal('modal-list')">✕</button>
+    </div>
+    <div class="modal-body" style="display:flex;gap:16px;padding:16px 20px;min-height:0;overflow:hidden">
+      <!-- 左：输入区 -->
+      <div style="flex:0 0 340px;display:flex;flex-direction:column;gap:10px">
+        <div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px">
+          <span id="modal-list-hint">一行一个</span>
+        </div>
+        <textarea id="modal-list-input" class="textarea" placeholder="" style="flex:1;resize:none;min-height:320px;font-size:13px;line-height:1.6"></textarea>
+        <button class="btn btn-primary" onclick="listModalAdd()" style="width:100%">添加</button>
+      </div>
+      <!-- 右：列表区 -->
+      <div style="flex:1;min-width:0;display:flex;flex-direction:column">
+        <div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">
+          已有条目 <span id="modal-list-count" style="color:var(--accent);font-weight:700">0</span> 条
+        </div>
+        <div class="list-items" id="modal-list-items" style="flex:1;max-height:none;overflow-y:auto;margin-top:0"></div>
+      </div>
+    </div>
+    <div class="modal-footer" style="justify-content:space-between">
+      <div style="display:flex;gap:6px">
+        <button class="btn btn-sm btn-ghost" onclick="listModalSelectAll()">全选</button>
+        <button class="btn btn-sm btn-ghost" onclick="listModalDeselectAll()">取消全选</button>
+        <button class="btn btn-sm btn-ghost btn-danger" onclick="listModalDeleteSelected()">删除选中</button>
+      </div>
+      <button class="btn btn-ghost" onclick="closeModal('modal-list')">关闭</button>
+    </div>
+  </div>
+</div>
+
+<!-- 批量修改资料弹窗 -->
+<div class="modal-overlay" id="modal-edit-profile">
+  <div class="modal modal-xl">
+    <div class="modal-header">
+      <h2>批量修改账号资料</h2>
+      <button class="modal-close" onclick="closeModal('modal-edit-profile')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-row" style="align-items:flex-start">
+        <!-- 预设文件 -->
+        <div class="form-group" style="flex:1.4">
+          <label>预设文件 <small style="color:var(--text-muted)">（点击用记事本打开编辑，每行一个）</small></label>
+          <div style="display:flex;flex-direction:column;gap:6px;margin-top:4px">
+            <div class="preset-file-row">
+              <span class="preset-file-label">名字</span>
+              <button class="btn btn-sm btn-ghost preset-file-btn" onclick="openPresetFile('profile_first_names.txt')">profile_first_names.txt</button>
+            </div>
+            <div class="preset-file-row">
+              <span class="preset-file-label">姓氏</span>
+              <button class="btn btn-sm btn-ghost preset-file-btn" onclick="openPresetFile('profile_last_names.txt')">profile_last_names.txt</button>
+            </div>
+            <div class="preset-file-row">
+              <span class="preset-file-label">简介</span>
+              <button class="btn btn-sm btn-ghost preset-file-btn" onclick="openPresetFile('profile_bios.txt')">profile_bios.txt</button>
+            </div>
+            <div class="preset-file-row">
+              <span class="preset-file-label">头像</span>
+              <button class="btn btn-sm btn-ghost preset-file-btn" onclick="openPhotoDir()">profile_photos/ （打开文件夹）</button>
+            </div>
+          </div>
+          <p style="color:var(--text-muted);font-size:12px;margin-top:8px">文件为空则清除对应资料<br>头像从文件夹内 jpg/png 随机选取</p>
+        </div>
+
+        <!-- 执行项目 -->
+        <div class="form-group" style="flex:1">
+          <label>执行项目</label>
+          <div style="display:flex;flex-direction:column;gap:4px;margin-top:4px">
+            <label class="toggle-label"><input type="checkbox" id="ep-do-first"><span>修改名字</span></label>
+            <label class="toggle-label"><input type="checkbox" id="ep-do-last"><span>修改姓氏</span></label>
+            <label class="toggle-label"><input type="checkbox" id="ep-do-bio"><span>修改简介</span></label>
+            <label class="toggle-label"><input type="checkbox" id="ep-random-affix"><span>名字/姓氏/简介随机前或后字符</span></label>
+            <label class="toggle-label"><input type="checkbox" id="ep-do-username" onchange="toggleUsernameInput(this)"><span>设置用户名</span></label>
+            <div id="ep-username-wrap" style="display:none;margin-top:6px;margin-left:22px">
+              <textarea id="ep-username-val" class="input" placeholder="每行一个用户名，按账号顺序依次设置&#10;留空则全部随机生成" style="width:100%;height:90px;font-size:12px;resize:vertical;line-height:1.6" maxlength="2000"></textarea>
+              <p style="color:var(--text-muted);font-size:11px;margin-top:3px">仅字母/数字/下划线，5-32位，字母开头 · 行数不足时剩余账号随机生成</p>
+            </div>
+            <label class="toggle-label"><input type="checkbox" id="ep-do-photo"><span>修改头像</span></label>
+            <label class="toggle-label"><input type="checkbox" id="ep-do-pwd"><span>修改二级密码</span></label>
+            <label class="toggle-label"><input type="checkbox" id="ep-do-privacy" onchange="togglePrivacyPanel(this)"><span>隐私设置</span></label>
+            <div id="ep-privacy-wrap" style="display:none;margin-top:6px">
+              <div style="display:grid;grid-template-columns:auto 90px;gap:6px 10px;align-items:center">
+                <span style="font-size:12px;color:var(--text-muted)">谁能看见手机号</span>
+                <select id="ep-privacy-phone" class="input" style="padding:4px 6px;font-size:12px">
+                  <option value="everybody">所有人</option>
+                  <option value="nobody" selected>没有人</option>
+                </select>
+                <span style="font-size:12px;color:var(--text-muted)">谁能看见在线状态</span>
+                <select id="ep-privacy-status" class="input" style="padding:4px 6px;font-size:12px">
+                  <option value="everybody">所有人</option>
+                  <option value="nobody" selected>没有人</option>
+                </select>
+                <span style="font-size:12px;color:var(--text-muted)">谁能看见头像</span>
+                <select id="ep-privacy-photo" class="input" style="padding:4px 6px;font-size:12px">
+                  <option value="everybody" selected>所有人</option>
+                  <option value="nobody">没有人</option>
+                </select>
+                <span style="font-size:12px;color:var(--text-muted)">谁能看见简介</span>
+                <select id="ep-privacy-bio" class="input" style="padding:4px 6px;font-size:12px">
+                  <option value="everybody" selected>所有人</option>
+                  <option value="nobody">没有人</option>
+                </select>
+                <span style="font-size:12px;color:var(--text-muted)">谁可以拉进群组</span>
+                <select id="ep-privacy-invite" class="input" style="padding:4px 6px;font-size:12px">
+                  <option value="everybody">所有人</option>
+                  <option value="nobody" selected>没有人</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 密码 -->
+        <div class="form-group" style="flex:1">
+          <label>两步验证密码</label>
+          <input type="password" id="ep-pwd-cur" class="input" placeholder="当前密码（留空则无）" style="margin-top:4px">
+          <input type="password" id="ep-pwd-new" class="input" placeholder="新密码（留空则不改）" style="margin-top:8px">
+          <p style="color:var(--text-muted);font-size:12px;margin-top:8px">作用于账号列表中勾选的账号</p>
+        </div>
+      </div>
+
+      <!-- 执行日志 -->
+      <div style="margin-top:12px">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">
+          <span style="font-size:12px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px">执行日志</span>
+          <button class="btn btn-sm btn-ghost" onclick="clearLog('ep-log')">清空</button>
+        </div>
+        <div class="log-box" id="ep-log" style="height:140px"></div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-edit-profile')">取消</button>
+      <button class="btn btn-primary" onclick="runBatchEdit()">▷ 开始修改</button>
+    </div>
+  </div>
+</div>
+
+<!-- API 池弹窗 -->
+<div class="modal-overlay" id="modal-api-pool">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>API 池管理</h2>
+      <button class="modal-close" onclick="closeModal('modal-api-pool')">✕</button>
+    </div>
+    <div class="modal-body">
+      <p style="color:var(--text-muted);font-size:13px;margin-bottom:8px">每行一组，格式: API_ID|API_HASH</p>
+      <textarea id="api-pool-input" class="textarea" rows="10" placeholder="19507614|6ed7516ea066d98be8fe9f4d560f5950"></textarea>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-api-pool')">取消</button>
+      <button class="btn btn-primary" onclick="saveApiPool()">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- 直发文案+媒体管理弹窗 -->
+<div class="modal-overlay" id="modal-direct-media">
+  <div class="modal modal-xl" style="width:860px;max-height:90vh">
+    <div class="modal-header">
+      <h2 id="dm-modal-title">直发文案管理</h2>
+      <button class="modal-close" onclick="closeModal('modal-direct-media')">✕</button>
+    </div>
+    <div class="modal-body" style="display:flex;gap:16px;padding:16px 20px;min-height:0;overflow:hidden">
+      <!-- 左：添加区 -->
+      <div style="flex:0 0 320px;display:flex;flex-direction:column;gap:10px">
+        <div>
+          <div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px">添加文案</div>
+          <textarea id="dm-modal-text-input" class="textarea" rows="6" placeholder="输入文案内容&#10;&#10;空行分隔多条文案" style="resize:none;font-size:13px;min-height:200px;line-height:1.6"></textarea>
+        </div>
+        <div>
+          <div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px">绑定媒体（可选）</div>
+          <div style="display:flex;gap:6px;align-items:center">
+            <div id="dm-modal-media-name" style="flex:1;font-size:12px;color:var(--text-muted);background:var(--bg-input);border:1px solid var(--border);border-radius:var(--radius-sm);padding:6px 10px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">未选择文件</div>
+            <button class="btn btn-sm btn-ghost" onclick="pickDirectMediaFile()">选择</button>
+            <button class="btn btn-sm btn-ghost" onclick="clearDirectMediaFile()" title="清除">✕</button>
+          </div>
+          <div style="font-size:11px;color:var(--text-muted);margin-top:4px">支持图片、视频、文件。多条文案共用同一媒体</div>
+        </div>
+        <button class="btn btn-primary" onclick="directMediaModalAdd()" style="width:100%">添加</button>
+      </div>
+      <!-- 右：列表区 -->
+      <div style="flex:1;min-width:0;display:flex;flex-direction:column">
+        <div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">
+          已有文案 <span id="dm-modal-count" style="color:var(--accent);font-weight:700">0</span> 条
+        </div>
+        <div id="dm-modal-list" style="flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:4px;min-height:0"></div>
+      </div>
+    </div>
+    <div class="modal-footer" style="justify-content:space-between">
+      <div style="display:flex;gap:6px">
+        <button class="btn btn-sm btn-ghost" onclick="directMediaSelectAll()">全选</button>
+        <button class="btn btn-sm btn-ghost" onclick="directMediaDeselectAll()">取消全选</button>
+        <button class="btn btn-sm btn-ghost btn-danger" onclick="directMediaDeleteSelected()">删除选中</button>
+      </div>
+      <button class="btn btn-ghost" onclick="closeModal('modal-direct-media')">关闭</button>
+    </div>
+  </div>
+</div>
+
+<!-- 名片管理弹窗 -->
+<div class="modal-overlay" id="modal-contact">
+  <div class="modal modal-xl" style="width:760px;max-height:88vh">
+    <div class="modal-header">
+      <h2 id="contact-modal-title">名片管理</h2>
+      <button class="modal-close" onclick="closeModal('modal-contact')">✕</button>
+    </div>
+    <div class="modal-body" style="display:flex;gap:16px;padding:16px 20px;min-height:0;overflow:hidden">
+      <!-- 左：添加区 -->
+      <div style="flex:0 0 280px;display:flex;flex-direction:column;gap:10px">
+        <div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px">添加名片</div>
+        <div class="form-group" style="margin-bottom:0">
+          <label>手机号 <small style="color:var(--text-muted)">(含国际区号)</small></label>
+          <input type="text" id="contact-phone-input" class="input" placeholder="+8613800138000">
+        </div>
+        <div class="form-group" style="margin-bottom:0">
+          <label>显示名字</label>
+          <input type="text" id="contact-name-input" class="input" placeholder="张三">
+        </div>
+        <button class="btn btn-primary" onclick="contactModalAdd()" style="width:100%;margin-top:4px">添加</button>
+        <div style="border-top:1px solid var(--border);padding-top:10px">
+          <div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:6px">批量导入</div>
+          <textarea id="contact-batch-input" class="textarea" rows="4" placeholder="每行一条，格式：&#10;+8613800138000 张三&#10;+8613900139000 李四"></textarea>
+          <button class="btn btn-ghost" onclick="contactModalBatchAdd()" style="width:100%;margin-top:6px;font-size:12px">批量添加</button>
+        </div>
+      </div>
+      <!-- 右：列表区 -->
+      <div style="flex:1;min-width:0;display:flex;flex-direction:column">
+        <div style="font-size:11px;font-weight:600;color:var(--text-muted);text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px">
+          已有名片 <span id="contact-modal-count" style="color:var(--accent);font-weight:700">0</span> 张
+        </div>
+        <div id="contact-modal-list" style="flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:4px;min-height:0"></div>
+      </div>
+    </div>
+    <div class="modal-footer" style="justify-content:space-between">
+      <div style="display:flex;gap:6px">
+        <button class="btn btn-sm btn-ghost" onclick="contactSelectAll()">全选</button>
+        <button class="btn btn-sm btn-ghost" onclick="contactDeselectAll()">取消全选</button>
+        <button class="btn btn-sm btn-ghost btn-danger" onclick="contactDeleteSelected()">删除选中</button>
+      </div>
+      <button class="btn btn-ghost" onclick="closeModal('modal-contact')">关闭</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-clone-accounts">
+  <div class="modal" style="width:520px;max-height:88vh">
+    <div class="modal-header">
+      <h2 id="clone-account-modal-title">选择账号</h2>
+      <button class="modal-close" onclick="closeModal('modal-clone-accounts')">✕</button>
+    </div>
+    <div class="modal-body">
+      <p style="color:var(--text-muted);font-size:12px;margin-bottom:10px">当前任务的账号角色互不重叠，采集/发送/备用会在启动前做校验。</p>
+      <div id="clone-account-list" class="list-items" style="max-height:420px"></div>
+    </div>
+    <div class="modal-footer" style="justify-content:space-between">
+      <div style="display:flex;gap:6px">
+        <button class="btn btn-sm btn-ghost" onclick="cloneAccountSelectAll()">全选</button>
+        <button class="btn btn-sm btn-ghost" onclick="cloneAccountDeselectAll()">取消全选</button>
+      </div>
+      <button class="btn btn-ghost" onclick="closeModal('modal-clone-accounts')">确定</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="modal-clone-task-log">
+  <div class="modal modal-xl" style="width:920px;max-height:90vh">
+    <div class="modal-header">
+      <h2 id="clone-task-log-title">任务完整日志</h2>
+      <button class="modal-close" onclick="closeModal('modal-clone-task-log')">✕</button>
+    </div>
+    <div class="modal-body" style="padding:14px 18px;display:flex;flex-direction:column;gap:10px;min-height:0">
+      <div style="display:flex;justify-content:space-between;align-items:center;gap:10px">
+        <div id="clone-task-log-meta" style="font-size:12px;color:var(--text-muted)">请选择任务查看日志</div>
+        <div style="display:flex;gap:6px">
+          <button class="btn btn-sm btn-ghost" onclick="refreshCloneTaskLogs()">刷新</button>
+          <button class="btn btn-sm btn-ghost" onclick="copyLog('clone-task-log-box')">复制</button>
+        </div>
+      </div>
+      <div class="log-box" id="clone-task-log-box" style="height:60vh"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="closeModal('modal-clone-task-log')">关闭</button>
+    </div>
+  </div>
+</div>
+
+<!-- 通用确认弹窗 -->
+<div class="modal-overlay" id="modal-confirm">
+  <div class="modal" style="width:360px">
+    <div class="modal-header">
+      <h2 id="confirm-title">确认</h2>
+      <button class="modal-close" onclick="_confirmResolve(false)">✕</button>
+    </div>
+    <div class="modal-body">
+      <p id="confirm-msg" style="font-size:14px;line-height:1.6"></p>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-ghost" onclick="_confirmResolve(false)">取消</button>
+      <button class="btn btn-primary" id="confirm-ok-btn" onclick="_confirmResolve(true)">确定</button>
+    </div>
+  </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>

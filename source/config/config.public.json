@@ -1,0 +1,126 @@
+﻿{
+    "api_id":  "",
+    "api_hash":  "",
+    "message_links":  [
+
+                      ],
+    "reply_texts":  [
+
+                    ],
+    "interval_per_group_min":  30,
+    "interval_per_group_max":  60,
+    "interval_after_complete_min":  60,
+    "interval_after_complete_max":  120,
+    "keep_online":  true,
+    "device_simulation":  true,
+    "auto_leave_restricted":  false,
+    "loop_mode":  true,
+    "random_send":  false,
+    "broadcast_mode":  "直发",
+    "direct_texts":  [
+                         {
+                             "text":  "1",
+                             "media":  ""
+                         }
+                     ],
+    "direct_random_send":  false,
+    "forward_links":  [
+
+                      ],
+    "forward_random_send":  false,
+    "forward_hide_sender":  true,
+    "post_codes":  [
+
+                   ],
+    "post_random_send":  false,
+    "dm_mode":  "直发",
+    "dm_direct_texts":  [
+                            {
+                                "text":  "测试",
+                                "media":  ""
+                            }
+                        ],
+    "dm_direct_random":  false,
+    "dm_links":  [
+
+                 ],
+    "dm_reply_texts":  [
+
+                       ],
+    "dm_random_send":  false,
+    "dm_forward_links":  [
+
+                         ],
+    "dm_forward_random":  false,
+    "dm_forward_hide_sender":  true,
+    "dm_post_codes":  [
+
+                      ],
+    "dm_post_random":  false,
+    "dm_interval_min":  30,
+    "dm_interval_max":  60,
+    "dm_max_per_account":  0,
+    "proxies":  [
+
+                ],
+    "api_pool":  [
+
+                 ],
+    "proxy_type":  "socks5",
+    "ws_threads":  1,
+    "ws_public_min":  0,
+    "ws_private_min":  0,
+    "ws_exclude_keywords":  "退押,暂停交易",
+    "vf_interval_min":  160,
+    "vf_interval_max":  220,
+    "checker_active_hours":  24,
+    "checker_interval_min":  3,
+    "checker_interval_max":  8,
+    "clone_tasks":  [
+                        {
+                            "id":  "clone_1779779359290_2a092a",
+                            "name":  "未命名任务",
+                            "enabled":  true,
+                            "mode":  "history_realtime",
+                            "source_chats_text":  "",
+                            "target_chats_text":  "",
+                            "history_limit":  300,
+                            "history_hours":  24,
+                            "playback_mode":  "compressed",
+                            "filter_bots":  true,
+                            "filter_channels":  true,
+                            "filter_service":  true,
+                            "filter_forwards":  true,
+                            "filter_links":  false,
+                            "filter_media":  false,
+                            "reader_sessions":  [
+
+                                                ],
+                            "sender_sessions":  [
+
+                                                ],
+                            "standby_sessions":  [
+
+                                                 ],
+                            "runtime_status":  "idle",
+                            "runtime_phase":  "",
+                            "runtime_last_error":  "",
+                            "runtime_stats":  {
+                                                  "processed":  0,
+                                                  "skipped":  0,
+                                                  "sent":  0,
+                                                  "errors":  0
+                                              }
+                        }
+                    ],
+    "reply_use_quote":  false,
+    "direct_random_suffix":  false,
+    "contact_random_send":  true,
+    "bc_schedule_enable":  false,
+    "bc_schedule_time":  "",
+    "bc_auto_unspam":  false,
+    "dm_contact_random":  true,
+    "dm_stop_on_flood":  false,
+    "dm_schedule_enable":  false,
+    "dm_schedule_time":  ""
+}
