@@ -34,6 +34,7 @@ release/              Git LFS tracked installer binary
 source/ui/            Modified UI files
 source/launcher/      Single-instance launcher source
 source/config/        Public sanitized config templates
+resource/             API pool resources for employees
 ```
 
 ## Upgrade Behavior
@@ -55,3 +56,13 @@ ISCC.exe installer\Fzdn1_TG_Tool_v4.1_GitHub_Public.iss
 ```
 
 The build source path in the `.iss` file is currently set for the emergency build machine. Adjust `SourceDir` before rebuilding on another machine.
+
+## API Resources
+
+API pool resources are stored in:
+
+```text
+resource/api_pool.txt
+```
+
+Employees can copy the content into the software API pool page after installation.
