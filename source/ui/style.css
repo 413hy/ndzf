@@ -512,7 +512,8 @@ body {
 }
 .sc-account-row:hover { background: var(--bg-input); }
 .sc-account-row input[type="checkbox"] { accent-color: var(--accent); width: 14px; height: 14px; flex-shrink: 0; cursor: pointer; }
-.sc-account-name { font-size: 13px; color: var(--text); }
+.sc-account-name { font-size: 13px; color: var(--text); display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.sc-account-sub { font-size: 11px; color: var(--text-muted); }
 
 .clone-task-list {
   display: flex;

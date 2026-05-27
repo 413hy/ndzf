@@ -1702,7 +1702,7 @@ async function _renderScAccountList() {
   const target = _currentAccountModalTarget;
   const selected = _selectedAccountsMap[target];
   const raw = await pyCall('get_accounts_json');
-  const accounts = JSON.parse(raw);
+  const accounts = _mergeSavedAccountStatus(JSON.parse(raw));
   const list = document.getElementById('sc-account-list');
   if (!list) return;
   if (!accounts.length) {
@@ -1711,10 +1711,12 @@ async function _renderScAccountList() {
   }
   list.innerHTML = accounts.map(a => {
     const checked = selected.has(a.session) ? 'checked' : '';
+    const displayName = a.username || a.phone || a.user_id || a.session;
+    const subText = displayName === a.session ? '' : `<span class="sc-account-sub">${a.session}</span>`;
     return `
     <div class="sc-account-row">
       <input type="checkbox" ${checked} onchange="toggleScAccount('${a.session}', this)">
-      <span class="sc-account-name">${a.username || a.session}</span>
+      <span class="sc-account-name">${displayName}${subText}</span>
     </div>`;
   }).join('');
 }
