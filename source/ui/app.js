@@ -617,6 +617,40 @@ async function cleanAbnormal() {
   refreshAccounts();
 }
 
+async function cleanupOrphanSessions() {
+  try {
+    let data = null;
+    for (let port = 19803; port <= 19833; port++) {
+      const ctl = new AbortController();
+      const timer = setTimeout(() => ctl.abort(), 300);
+      try {
+        const res = await fetch(`http://127.0.0.1:${port}/local/cleanup_orphan_sessions`, { signal: ctl.signal });
+        data = await res.json();
+        break;
+      } catch (e) {
+      } finally {
+        clearTimeout(timer);
+      }
+    }
+    if (!data) {
+      showToast('error', '清理孤儿 Session 失败: 本地接口不可用');
+      return;
+    }
+    if (!data.ok) {
+      showToast('error', data.error || '清理孤儿 Session 失败');
+      return;
+    }
+    if (data.moved > 0) {
+      showToast('success', `已备份清理 ${data.moved} 个孤儿 Session`);
+    } else {
+      showToast('info', '没有发现孤儿 Session');
+    }
+    refreshAccounts();
+  } catch (e) {
+    showToast('error', '清理孤儿 Session 失败: ' + (e && e.message ? e.message : e));
+  }
+}
+
 async function moveSpamAccounts() {
   const res = JSON.parse(await pyCall('move_spam_accounts'));
   if (res.ok) {
