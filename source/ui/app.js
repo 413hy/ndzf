@@ -362,6 +362,7 @@ let _selectedAccounts = new Set();
 let _accountsCache = {};  // session -> {status, username, device} 用于 diff
 let _autoDedupeAccountsRunning = false;
 const ACCOUNT_STATUS_CACHE_KEY = 'fzdn_account_status_cache_v1';
+const DELETED_ACCOUNT_CACHE_KEY = 'fzdn_deleted_accounts_v1';
 
 function _loadAccountStatusCache() {
   const cfgCache = (_cfg && _cfg.account_status_cache) || {};
@@ -384,6 +385,36 @@ function _saveAccountStatusCache(cache) {
       pyCall('save_config', JSON.stringify({ account_status_cache: _cfg.account_status_cache })).catch(() => {});
     }
   } catch (e) {}
+}
+
+
+function _loadDeletedAccounts() {
+  try {
+    const raw = localStorage.getItem(DELETED_ACCOUNT_CACHE_KEY);
+    return new Set(raw ? JSON.parse(raw) : []);
+  } catch (e) {
+    return new Set();
+  }
+}
+
+function _saveDeletedAccounts(set) {
+  try {
+    localStorage.setItem(DELETED_ACCOUNT_CACHE_KEY, JSON.stringify([...set]));
+  } catch (e) {}
+}
+
+function _markAccountsDeleted(sessions) {
+  const deleted = _loadDeletedAccounts();
+  sessions.forEach(s => {
+    if (s) deleted.add(s);
+  });
+  _saveDeletedAccounts(deleted);
+}
+
+function _visibleAccountsFromRaw(raw) {
+  const accounts = _mergeSavedAccountStatus(JSON.parse(raw || '[]'));
+  const deleted = _loadDeletedAccounts();
+  return accounts.filter(a => !deleted.has(a.session));
 }
 
 function _isPlaceholderStatus(status) {
@@ -457,6 +488,7 @@ async function _autoRemoveDuplicateAccounts(accounts) {
   _autoDedupeAccountsRunning = true;
   try {
     const uniqueRemove = [...new Set(remove)];
+    _markAccountsDeleted(uniqueRemove);
     try {
       await pyCall('delete_accounts', JSON.stringify(uniqueRemove));
     } catch (e) {
@@ -481,10 +513,10 @@ async function _autoRemoveDuplicateAccounts(accounts) {
 
 async function refreshAccounts() {
   const raw = await pyCall('get_accounts_json');
-  const accounts = _mergeSavedAccountStatus(JSON.parse(raw));
+  const accounts = _visibleAccountsFromRaw(raw);
   if (await _autoRemoveDuplicateAccounts(accounts)) {
     const raw2 = await pyCall('get_accounts_json');
-    renderAccounts(_mergeSavedAccountStatus(JSON.parse(raw2)));
+    renderAccounts(_visibleAccountsFromRaw(raw2));
     return;
   }
   renderAccounts(accounts);
@@ -702,6 +734,7 @@ async function deleteSelected() {
 
   const local = await callLocalLauncher('/local/delete_sessions?names=' + encodeURIComponent(selected.join(',')), 600);
   if (local && local.ok) {
+    _markAccountsDeleted(selected);
     selected.forEach(s => {
       _selectedAccounts.delete(s);
       delete _accountsCache[s];
@@ -716,6 +749,7 @@ async function deleteSelected() {
   }
 
   if (backend.ok) {
+    _markAccountsDeleted(selected);
     showToast('success', `\u5df2\u5220\u9664 ${backend.deleted} \u4e2a\u8d26\u53f7`);
     _selectedAccounts.clear();
     await forceRefreshAccounts();
@@ -1436,7 +1470,7 @@ function registerCallbacks() {
       document.getElementById('login-status').textContent = '';
     }
   };
-  window._onAccountsUpdate = (json) => renderAccounts(_mergeSavedAccountStatus(JSON.parse(json)));
+  window._onAccountsUpdate = (json) => renderAccounts(_visibleAccountsFromRaw(json));
   window._onStatsUpdate = (json) => {
     const stats = JSON.parse(json);
     const tbody = document.getElementById('stats-tbody');
@@ -1783,7 +1817,7 @@ async function _renderScAccountList() {
   const target = _currentAccountModalTarget;
   const selected = _selectedAccountsMap[target];
   const raw = await pyCall('get_accounts_json');
-  const accounts = _mergeSavedAccountStatus(JSON.parse(raw));
+  const accounts = _visibleAccountsFromRaw(raw);
   const list = document.getElementById('sc-account-list');
   if (!list) return;
   if (!accounts.length) {

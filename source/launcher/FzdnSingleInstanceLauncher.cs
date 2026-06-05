@@ -299,13 +299,16 @@ internal static class FzdnSingleInstanceLauncher
 
             HashSet<string> configured = LoadConfiguredSessionNames(Path.Combine(_appRoot, "session_config.json"));
             string[] sessionFiles = Directory.GetFiles(sessionsDir, "*.session", SearchOption.TopDirectoryOnly);
+            var movedNames = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             int moved = 0;
             string backupDir = "";
 
             foreach (string sessionFile in sessionFiles)
             {
                 string name = Path.GetFileNameWithoutExtension(sessionFile);
-                if (configured.Contains(name)) continue;
+                bool hasConfig = configured.Contains(name);
+                bool hasSidecarJson = File.Exists(Path.Combine(sessionsDir, name + ".json"));
+                if (hasConfig && hasSidecarJson) continue;
 
                 if (backupDir.Length == 0)
                 {
@@ -318,9 +321,15 @@ internal static class FzdnSingleInstanceLauncher
                 MoveIfExists(Path.Combine(sessionsDir, name + ".session-journal"), Path.Combine(backupDir, name + ".session-journal"));
                 MoveIfExists(Path.Combine(sessionsDir, name + ".session-wal"), Path.Combine(backupDir, name + ".session-wal"));
                 MoveIfExists(Path.Combine(sessionsDir, name + ".session-shm"), Path.Combine(backupDir, name + ".session-shm"));
+                movedNames.Add(name);
                 moved++;
             }
 
+            if (movedNames.Count > 0)
+            {
+                RemoveTopLevelJsonEntries(Path.Combine(_appRoot, "session_config.json"), movedNames);
+                RemoveTopLevelJsonEntries(Path.Combine(_appRoot, "session_string_cache.json"), movedNames);
+            }
             if (moved > 0) Log("Moved orphan sessions: " + moved + " -> " + backupDir);
             return "{\"ok\":true,\"moved\":" + moved + ",\"backup\":\"" + JsonEscape(backupDir) + "\"}";
         }
