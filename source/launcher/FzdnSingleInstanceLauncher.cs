@@ -36,6 +36,7 @@ internal static class FzdnSingleInstanceLauncher
             _appRoot = root;
             _logDir = Path.Combine(root, "runtime_logs");
 
+            ProcessPendingDeletes();
             CleanupOrphanSessions();
             StartEmbeddedLicenseProxy();
 
@@ -184,6 +185,10 @@ internal static class FzdnSingleInstanceLauncher
                 {
                     WriteJson(stream, 200, CleanupOrphanSessions());
                 }
+                else if (path.StartsWith("/local/delete_sessions", StringComparison.OrdinalIgnoreCase))
+                {
+                    WriteJson(stream, 200, DeleteSessions(GetQueryValue(path, "names")));
+                }
                 else
                 {
                     WriteJson(stream, 404, "{\"ok\":false,\"message\":\"Unhandled path\"}");
@@ -323,6 +328,197 @@ internal static class FzdnSingleInstanceLauncher
         {
             return "{\"ok\":false,\"error\":\"" + JsonEscape(ex.Message) + "\"}";
         }
+    }
+
+    private static string DeleteSessions(string namesCsv)
+    {
+        try
+        {
+            HashSet<string> names = ParseSessionNames(namesCsv);
+            if (names.Count == 0) return "{\"ok\":false,\"error\":\"no sessions selected\"}";
+
+            string backupDir = Path.Combine(_appRoot, "runtime_logs", "deleted_sessions_backup", DateTime.Now.ToString("yyyyMMdd_HHmmss"));
+            Directory.CreateDirectory(backupDir);
+
+            RemoveTopLevelJsonEntries(Path.Combine(_appRoot, "session_config.json"), names);
+            RemoveTopLevelJsonEntries(Path.Combine(_appRoot, "session_string_cache.json"), names);
+
+            int moved = 0;
+            int pending = 0;
+            foreach (string name in names)
+            {
+                bool ok = MoveSessionFilesToBackup(name, backupDir);
+                if (ok) moved++;
+                else
+                {
+                    AppendPendingDelete(name);
+                    pending++;
+                }
+            }
+
+            CleanupOrphanSessions();
+            Log("Delete sessions requested: " + names.Count + ", moved=" + moved + ", pending=" + pending);
+            return "{\"ok\":true,\"requested\":" + names.Count + ",\"moved\":" + moved + ",\"pending\":" + pending + ",\"backup\":\"" + JsonEscape(backupDir) + "\"}";
+        }
+        catch (Exception ex)
+        {
+            return "{\"ok\":false,\"error\":\"" + JsonEscape(ex.Message) + "\"}";
+        }
+    }
+
+    private static HashSet<string> ParseSessionNames(string namesCsv)
+    {
+        var names = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        if (string.IsNullOrWhiteSpace(namesCsv)) return names;
+        foreach (string part in namesCsv.Split(','))
+        {
+            string name = part.Trim();
+            if (name.Length == 0) continue;
+            name = Path.GetFileNameWithoutExtension(name);
+            if (name.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0) continue;
+            names.Add(name);
+        }
+        return names;
+    }
+
+    private static bool MoveSessionFilesToBackup(string name, string backupDir)
+    {
+        string sessionsDir = Path.Combine(_appRoot, "sessions");
+        bool movedAny = false;
+        bool allOk = true;
+        string[] suffixes = { ".session", ".json", ".session-journal", ".session-wal", ".session-shm" };
+        foreach (string suffix in suffixes)
+        {
+            string src = Path.Combine(sessionsDir, name + suffix);
+            if (!File.Exists(src)) continue;
+            try
+            {
+                MoveIfExists(src, Path.Combine(backupDir, name + suffix));
+                movedAny = true;
+            }
+            catch (Exception ex)
+            {
+                allOk = false;
+                Log("Could not move session file " + src + ": " + ex.Message);
+            }
+        }
+        return allOk && movedAny;
+    }
+
+    private static void ProcessPendingDeletes()
+    {
+        try
+        {
+            string pendingPath = Path.Combine(_appRoot, "runtime_logs", "pending_delete_sessions.txt");
+            if (!File.Exists(pendingPath)) return;
+            HashSet<string> names = ParseSessionNames(File.ReadAllText(pendingPath, Encoding.UTF8).Replace("\r", ",").Replace("\n", ","));
+            if (names.Count == 0)
+            {
+                File.Delete(pendingPath);
+                return;
+            }
+
+            string backupDir = Path.Combine(_appRoot, "runtime_logs", "deleted_sessions_backup", DateTime.Now.ToString("yyyyMMdd_HHmmss"));
+            Directory.CreateDirectory(backupDir);
+            var stillPending = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            foreach (string name in names)
+            {
+                if (!MoveSessionFilesToBackup(name, backupDir)) stillPending.Add(name);
+            }
+
+            if (stillPending.Count == 0) File.Delete(pendingPath);
+            else File.WriteAllText(pendingPath, string.Join(Environment.NewLine, stillPending.ToArray()), Encoding.UTF8);
+        }
+        catch (Exception ex)
+        {
+            Log("Process pending deletes failed: " + ex.Message);
+        }
+    }
+
+    private static void AppendPendingDelete(string name)
+    {
+        string pendingPath = Path.Combine(_appRoot, "runtime_logs", "pending_delete_sessions.txt");
+        Directory.CreateDirectory(Path.GetDirectoryName(pendingPath));
+        File.AppendAllText(pendingPath, name + Environment.NewLine, Encoding.UTF8);
+    }
+
+    private static void RemoveTopLevelJsonEntries(string path, HashSet<string> names)
+    {
+        if (!File.Exists(path)) return;
+        string text = File.ReadAllText(path, Encoding.UTF8);
+        string trimmed = text.Trim();
+        if (trimmed.Length < 2 || trimmed[0] != '{' || trimmed[trimmed.Length - 1] != '}') return;
+
+        var kept = new List<string>();
+        int i = 1;
+        while (i < trimmed.Length - 1)
+        {
+            while (i < trimmed.Length - 1 && (char.IsWhiteSpace(trimmed[i]) || trimmed[i] == ',')) i++;
+            if (i >= trimmed.Length - 1) break;
+            int memberStart = i;
+            if (trimmed[i] != '"') break;
+            int keyEnd = FindStringEnd(trimmed, i);
+            if (keyEnd < 0) break;
+            string key = UnescapeJsonString(trimmed.Substring(i + 1, keyEnd - i - 1));
+            i = keyEnd + 1;
+            while (i < trimmed.Length - 1 && char.IsWhiteSpace(trimmed[i])) i++;
+            if (i >= trimmed.Length - 1 || trimmed[i] != ':') break;
+            i++;
+            int valueEnd = FindJsonValueEnd(trimmed, i);
+            if (valueEnd < 0) break;
+            string member = trimmed.Substring(memberStart, valueEnd - memberStart);
+            if (!names.Contains(key)) kept.Add(member);
+            i = valueEnd;
+        }
+
+        string output = "{\r\n";
+        for (int k = 0; k < kept.Count; k++)
+        {
+            output += "  " + kept[k].Trim();
+            if (k < kept.Count - 1) output += ",";
+            output += "\r\n";
+        }
+        output += "}\r\n";
+        File.WriteAllText(path, output, Encoding.UTF8);
+    }
+
+    private static int FindStringEnd(string text, int quoteStart)
+    {
+        bool escaping = false;
+        for (int i = quoteStart + 1; i < text.Length; i++)
+        {
+            if (escaping) { escaping = false; continue; }
+            if (text[i] == '\\') { escaping = true; continue; }
+            if (text[i] == '"') return i;
+        }
+        return -1;
+    }
+
+    private static int FindJsonValueEnd(string text, int start)
+    {
+        bool inString = false;
+        bool escaping = false;
+        int depth = 0;
+        for (int i = start; i < text.Length; i++)
+        {
+            char ch = text[i];
+            if (inString)
+            {
+                if (escaping) escaping = false;
+                else if (ch == '\\') escaping = true;
+                else if (ch == '"') inString = false;
+                continue;
+            }
+            if (ch == '"') inString = true;
+            else if (ch == '{' || ch == '[') depth++;
+            else if (ch == '}' || ch == ']')
+            {
+                if (depth == 0) return i;
+                depth--;
+            }
+            else if (ch == ',' && depth == 0) return i;
+        }
+        return text.Length - 1;
     }
 
     private static HashSet<string> LoadConfiguredSessionNames(string configPath)

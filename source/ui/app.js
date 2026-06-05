@@ -457,7 +457,11 @@ async function _autoRemoveDuplicateAccounts(accounts) {
   _autoDedupeAccountsRunning = true;
   try {
     const uniqueRemove = [...new Set(remove)];
-    await pyCall('delete_accounts', JSON.stringify(uniqueRemove));
+    try {
+      await pyCall('delete_accounts', JSON.stringify(uniqueRemove));
+    } catch (e) {
+    }
+    await callLocalLauncher('/local/delete_sessions?names=' + encodeURIComponent(uniqueRemove.join(',')), 600);
     uniqueRemove.forEach(s => {
       _selectedAccounts.delete(s);
       delete _accountsCache[s];
@@ -486,6 +490,28 @@ async function refreshAccounts() {
   renderAccounts(accounts);
 }
 
+async function forceRefreshAccounts() {
+  _accountsCache = {};
+  const list = document.getElementById('account-list');
+  if (list) list.innerHTML = '';
+  await refreshAccounts();
+}
+
+async function callLocalLauncher(path, timeoutMs = 300) {
+  for (let port = 19803; port <= 19833; port++) {
+    const ctl = new AbortController();
+    const timer = setTimeout(() => ctl.abort(), timeoutMs);
+    try {
+      const res = await fetch(`http://127.0.0.1:${port}${path}`, { signal: ctl.signal });
+      return await res.json();
+    } catch (e) {
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+  return null;
+}
+
 function _getStatusClass(a) {
   return {
     '正常': 'status-normal', '已冻结': 'status-frozen',
@@ -505,9 +531,17 @@ function renderAccounts(accounts) {
   if (!accounts.length) {
     list.innerHTML = '<tr><td colspan="7" class="empty-state">暂无账号，请导入 Session 文件或登录新账号</td></tr>';
     _accountsCache = {};
+    _selectedAccounts.clear();
+    const selectAll = document.getElementById('select-all');
+    if (selectAll) selectAll.checked = false;
     updateSelectCount();
     return;
   }
+
+  const liveSessions = new Set(accounts.map(a => a.session));
+  [..._selectedAccounts].forEach(s => {
+    if (!liveSessions.has(s)) _selectedAccounts.delete(s);
+  });
 
   const newSessions = new Set(accounts.map(a => a.session));
   const oldSessions = new Set(Object.keys(_accountsCache));
@@ -614,40 +648,28 @@ async function detectAccounts() {
 async function cleanAbnormal() {
   const res = JSON.parse(await pyCall('clean_abnormal_accounts'));
   showToast('success', `已清理 ${res.deleted} 个异常账号`);
-  refreshAccounts();
+  await forceRefreshAccounts();
 }
 
 async function cleanupOrphanSessions() {
   try {
-    let data = null;
-    for (let port = 19803; port <= 19833; port++) {
-      const ctl = new AbortController();
-      const timer = setTimeout(() => ctl.abort(), 300);
-      try {
-        const res = await fetch(`http://127.0.0.1:${port}/local/cleanup_orphan_sessions`, { signal: ctl.signal });
-        data = await res.json();
-        break;
-      } catch (e) {
-      } finally {
-        clearTimeout(timer);
-      }
-    }
+    const data = await callLocalLauncher('/local/cleanup_orphan_sessions');
     if (!data) {
-      showToast('error', '清理孤儿 Session 失败: 本地接口不可用');
+      showToast('error', '\u6e05\u7406\u5b64\u513f Session \u5931\u8d25: \u672c\u5730\u63a5\u53e3\u4e0d\u53ef\u7528');
       return;
     }
     if (!data.ok) {
-      showToast('error', data.error || '清理孤儿 Session 失败');
+      showToast('error', data.error || '\u6e05\u7406\u5b64\u513f Session \u5931\u8d25');
       return;
     }
     if (data.moved > 0) {
-      showToast('success', `已备份清理 ${data.moved} 个孤儿 Session`);
+      showToast('success', `\u5df2\u5907\u4efd\u6e05\u7406 ${data.moved} \u4e2a\u5b64\u513f Session`);
     } else {
-      showToast('info', '没有发现孤儿 Session');
+      showToast('info', '\u6ca1\u6709\u53d1\u73b0\u5b64\u513f Session');
     }
-    refreshAccounts();
+    await forceRefreshAccounts();
   } catch (e) {
-    showToast('error', '清理孤儿 Session 失败: ' + (e && e.message ? e.message : e));
+    showToast('error', '\u6e05\u7406\u5b64\u513f Session \u5931\u8d25: ' + (e && e.message ? e.message : e));
   }
 }
 
@@ -666,15 +688,40 @@ async function moveSpamAccounts() {
 }
 
 async function deleteSelected() {
-  if (!_selectedAccounts.size) { showToast('warning', '请先选择账号'); return; }
-  const ok = await showConfirm(`确定删除选中的 ${_selectedAccounts.size} 个账号？`, '删除账号');
+  if (!_selectedAccounts.size) { showToast('warning', '\u8bf7\u5148\u9009\u62e9\u8d26\u53f7'); return; }
+  const selected = [..._selectedAccounts];
+  const ok = await showConfirm(`\u786e\u5b9a\u5220\u9664\u9009\u4e2d\u7684 ${selected.length} \u4e2a\u8d26\u53f7\uff1f`, '\u5220\u9664\u8d26\u53f7');
   if (!ok) return;
-  const res = JSON.parse(await pyCall('delete_accounts', JSON.stringify([..._selectedAccounts])));
-  if (res.ok) {
-    showToast('success', `已删除 ${res.deleted} 个账号`);
+
+  let backend = { ok: false, deleted: 0 };
+  try {
+    backend = JSON.parse(await pyCall('delete_accounts', JSON.stringify(selected)));
+  } catch (e) {
+    backend = { ok: false, error: e && e.message ? e.message : String(e) };
+  }
+
+  const local = await callLocalLauncher('/local/delete_sessions?names=' + encodeURIComponent(selected.join(',')), 600);
+  if (local && local.ok) {
+    selected.forEach(s => {
+      _selectedAccounts.delete(s);
+      delete _accountsCache[s];
+    });
+    const saved = _loadAccountStatusCache();
+    selected.forEach(s => delete saved[s]);
+    _saveAccountStatusCache(saved);
+    const pending = local.pending || 0;
+    showToast(pending ? 'warning' : 'success', pending ? `\u5df2\u4ece\u5217\u8868\u5220\u9664 ${selected.length} \u4e2a\u8d26\u53f7\uff0c${pending} \u4e2a\u6587\u4ef6\u5c06\u5728\u4e0b\u6b21\u542f\u52a8\u524d\u6e05\u7406` : `\u5df2\u5220\u9664 ${selected.length} \u4e2a\u8d26\u53f7`);
+    await forceRefreshAccounts();
+    return;
+  }
+
+  if (backend.ok) {
+    showToast('success', `\u5df2\u5220\u9664 ${backend.deleted} \u4e2a\u8d26\u53f7`);
     _selectedAccounts.clear();
-    refreshAccounts();
-  } else showToast('error', res.error);
+    await forceRefreshAccounts();
+  } else {
+    showToast('error', (local && local.error) || backend.error || '\u5220\u9664\u5931\u8d25');
+  }
 }
 
 async function kickOtherDevices() {
